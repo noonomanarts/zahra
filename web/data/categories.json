@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "accessories",
+    "name": "Accessories",
+    "count": 5
+  },
+  {
+    "slug": "advance-kits",
+    "name": "Advance Kits",
+    "count": 8
+  },
+  {
+    "slug": "beginners-kits",
+    "name": "Beginners Kits",
+    "count": 20
+  },
+  {
+    "slug": "featured",
+    "name": "Featured",
+    "count": 8
+  },
+  {
+    "slug": "homemade",
+    "name": "Homemade",
+    "count": 6
+  },
+  {
+    "slug": "islamic-patterns",
+    "name": "Islamic Patterns",
+    "count": 46
+  },
+  {
+    "slug": "new-tab",
+    "name": "New Tab",
+    "count": 1
+  },
+  {
+    "slug": "offers",
+    "name": "Offers",
+    "count": 1
+  },
+  {
+    "slug": "other-patterns",
+    "name": "Other patterns",
+    "count": 18
+  },
+  {
+    "slug": "palestinian-patterns",
+    "name": "Palestinian Patterns",
+    "count": 8
+  },
+  {
+    "slug": "ramadan-eid-patterns",
+    "name": "Ramadan & Eid patterns",
+    "count": 6
+  }
+]

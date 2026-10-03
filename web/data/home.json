@@ -1,0 +1,138 @@
+{
+  "title": "Zahras Design Studio – Crafted with Love",
+  "blocks": [
+    {
+      "type": "hero",
+      "title": "Crafted with Love",
+      "subtitle": "Stitched with Care",
+      "html": "<p>We are a top company providing Arabic cross stitch patterns in an easy and distinctive manner. Additionally, we offer a variety of cross stitch kits suitable for both beginners and experts.</p>",
+      "button": {
+        "text": "View Products",
+        "href": "/cross-stitch-kits"
+      },
+      "image": "/images/group-155-1.png",
+      "background": "/images/group-154-1.png"
+    },
+    {
+      "type": "image",
+      "src": "/images/group-154-3.png",
+      "alt": ""
+    },
+    {
+      "type": "button",
+      "text": "View Products",
+      "href": "/digital-patterns"
+    },
+    {
+      "type": "image",
+      "src": "/images/group-154-2.png",
+      "alt": ""
+    },
+    {
+      "type": "button",
+      "text": "View Products",
+      "href": "/cross-stitch-kits"
+    },
+    {
+      "type": "image",
+      "src": "/images/group-155.png",
+      "alt": ""
+    },
+    {
+      "type": "button",
+      "text": "View Products",
+      "href": "/handmade-products"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Enjoy 15% Sale"
+    },
+    {
+      "type": "products",
+      "products": [
+        "amoor-cross-stitch-pattern",
+        "dark-blue-cross-stitch-pillow-cover-kit",
+        "duaa-alnoor-cross-stitch-pattern",
+        "duaa-alsabah-cross-stitch-pattern",
+        "green-cross-stitch-pillow-cover-kit",
+        "names-of-allah-cross-stitch-pattern"
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "What's New"
+    },
+    {
+      "type": "products",
+      "products": [
+        "hussain-mny"
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Worldwide Shipping is Available"
+    },
+    {
+      "type": "button",
+      "text": "Learn More",
+      "href": "/shipping-return"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Reviews"
+    },
+    {
+      "type": "testimonials",
+      "items": [
+        {
+          "text": "Tory HollingsworthGreat PDF that shows pattern in different ways!",
+          "name": "",
+          "image": null
+        },
+        {
+          "text": "Cynthia ConroyVery pleased with how this designed turned out. It will be a gift to my dear friend who is Muslim.",
+          "name": "",
+          "image": null
+        },
+        {
+          "text": "HarumiFound little mistakes on the pattern along the way, but I love the finished look. Thank you!",
+          "name": "",
+          "image": null
+        },
+        {
+          "text": "Lonely PandaThe pattern is beginner friendly. It's really easy to read & no need have many codes of thread to use it. It's worth my.",
+          "name": "",
+          "image": null
+        },
+        {
+          "text": "aks102Great pattern, contains all the details required to complete the project.",
+          "name": "",
+          "image": null
+        },
+        {
+          "text": "LayanZahra was very responsive and open to new designs - highly recommend.",
+          "name": "",
+          "image": null
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Get in Touch"
+    },
+    {
+      "type": "text",
+      "html": "<p>At Zahra’s Design Studio, we focus on designing, experimenting and assembling to create unique kits.</p>"
+    },
+    {
+      "type": "button",
+      "text": "contact us",
+      "href": "/contact-us"
+    }
+  ]
+}

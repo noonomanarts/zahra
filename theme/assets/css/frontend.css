@@ -1,0 +1,152 @@
+/**
+ * Frontend currency selector
+ *
+ * Minimal, theme-friendly styling. Rules are scoped with the plugin's own
+ * classes and use `!important` on the properties that themes most often
+ * override (padding, borders, background, width) so the selector blends into
+ * any header/menu exactly like a text item, instead of looking like the
+ * theme's default boxed <select>.
+ */
+
+.wpcs-omr-mc-selector {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    max-width: 100%;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+.wpcs-omr-mc-selector-label {
+    font: inherit;
+    color: inherit;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+.wpcs-omr-mc-selector-label:empty,
+.wpcs-omr-mc-selector-label.is-hidden {
+    display: none;
+}
+
+.wpcs-omr-mc-selector-shell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Underlined variant: no box at all, only a faint bottom line. */
+.wpcs-omr-mc-selector.is-style-underline .wpcs-omr-mc-selector-shell {
+    border-radius: 0;
+    box-shadow: inset 0 -1px 0 0 currentColor !important;
+    opacity: 0.95;
+}
+
+select.wpcs-omr-mc-selector-field,
+.wpcs-omr-mc-selector-field {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-block;
+    width: auto !important;
+    min-width: 0;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-inline-end: 1.1em !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    outline: 0;
+    color: inherit !important;
+    font: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    letter-spacing: inherit !important;
+    line-height: inherit !important;
+    text-transform: inherit !important;
+    text-indent: 0;
+    text-shadow: none;
+    cursor: pointer;
+}
+
+.wpcs-omr-mc-selector-field::-ms-expand {
+    display: none;
+}
+
+.wpcs-omr-mc-selector-field:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+.wpcs-omr-mc-selector-shell:focus-within {
+    outline: 1.5px solid currentColor;
+    outline-offset: 3px;
+}
+
+.wpcs-omr-mc-selector-chevron {
+    position: absolute;
+    inset-inline-end: 0.1em;
+    top: 50%;
+    width: 0.4em;
+    height: 0.4em;
+    border-inline-end: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    opacity: 0.5;
+    transform: translateY(-62%) rotate(45deg);
+    pointer-events: none;
+}
+
+.wpcs-omr-mc-selector.is-loading .wpcs-omr-mc-selector-chevron {
+    width: 0.8em;
+    height: 0.8em;
+    border: 1.5px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    opacity: 0.7;
+    transform: translateY(-50%);
+    animation: wpcs-omr-mc-spin 0.8s linear infinite;
+}
+
+.wpcs-omr-mc-selector.is-loading .wpcs-omr-mc-selector-field {
+    opacity: 0.6;
+}
+
+.wpcs-omr-mc-selector-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Flag emoji alignment inside menu items and the admin preview. */
+.wpcs-omr-mc-menu-item,
+.wpcs-omr-mc-menu-parent,
+.wpcs-omr-mc-selector-field option {
+    line-height: 1.5;
+}
+
+@keyframes wpcs-omr-mc-spin {
+    from {
+        transform: translateY(-50%) rotate(0deg);
+    }
+
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}

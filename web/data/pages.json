@@ -1,0 +1,681 @@
+[
+  {
+    "slug": "about-us",
+    "title": "About Us",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "About Us"
+      },
+      {
+        "type": "image",
+        "src": "/images/are.png",
+        "alt": ""
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Who We Are"
+      },
+      {
+        "type": "text",
+        "html": "<p>ZAHRA’S DESIGN STUDIO is a craft company that cre­ates creative cross stitch kits, unique patterns and joy­ful workshops. We were established in 2022 by Zahra Al-lawati, from her love of Palestinian embroidery. Her aim was to recreate the heritage patterns to a modern and simple designs.</p><p>Our designs are crafted in our studio in Muscat, Oman. Our products and workshops are suitable for both be­ginners and experienced stitchers.</p><p>All of our kits include high quality materials and easy to un­derstand tutorials, The kits come in a box with everything you need to complete your cross-stitch project.</p>"
+      },
+      {
+        "type": "counter",
+        "value": "520",
+        "suffix": "+",
+        "label": "Patterns Sold​"
+      },
+      {
+        "type": "counter",
+        "value": "70",
+        "suffix": "+",
+        "label": "Online Review"
+      },
+      {
+        "type": "counter",
+        "value": "220",
+        "suffix": "+",
+        "label": "Trainee by Zahra Al-lawati"
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "My Wedding Dress"
+      },
+      {
+        "type": "text",
+        "html": "<p>Embroidering my wedding dress was always a dream of mine. It was an incredible journey, and I learned so much along the way. Now, I can proudly say, \"My wedding dress was designed and embroidered by me.\"</p><p>Zahra Al-lawati</p>"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/3-450x500.jpg",
+          "/images/af7b6209-f8d6-4337-9b26-97c32a18987f-450x500.jpg",
+          "/images/img-0925-450x500.png",
+          "/images/img-7157-450x500.jpg",
+          "/images/img-7569-450x500.jpg",
+          "/images/img-7628-450x500.jpg"
+        ]
+      },
+      {
+        "type": "video",
+        "url": "https://www.youtube.com/watch?v=uvPaUl08orY"
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Workshops"
+      },
+      {
+        "type": "text",
+        "html": "<p>Zahra Al-lawati is an experienced embroidery and cross-stitch trainer who loves sharing her skills with others. She has trained over 200 people through both online and in-person workshops. Zahra makes learning fun and easy by teaching techniques that combine traditional styles with modern ideas. Her workshops are friendly and hands-on, helping trainees build confidence and enjoy the art of embroidery and cross-stitch.</p><p>The workshops begin with an introduction to the art, where participants explore the tools and practice the basic stitches. Each student then works on their own project to apply what they have learned during the session.</p><p>If you're interested to join one of Zahra's workshops, you can join our WhatsApp list Click here to get the announcement and all the details about our upcoming workshops when they're out.</p>"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/img-3661-450x500.jpg",
+          "/images/img-6567-450x500.jpg",
+          "/images/img-6688-450x500.jpg",
+          "/images/img-6690-450x500.jpg"
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Find Our Products In"
+      },
+      {
+        "type": "text",
+        "html": "<p>Noon Centre</p>"
+      },
+      {
+        "type": "text",
+        "html": "<p>Tafta</p>"
+      }
+    ]
+  },
+  {
+    "slug": "accessories-products",
+    "title": "Accessories",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Accessories"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/img-9283-450x500.jpg",
+          "/images/uploads/img-5012-450x500.jpg",
+          "/images/uploads/img-9282-450x500.jpg",
+          "/images/uploads/dd3d6051-9282-49a2-ba15-61366da958ae-450x500.jpg",
+          "/images/uploads/20221221-110341297-ios-450x500.jpg"
+        ]
+      },
+      {
+        "type": "products",
+        "products": [
+          "cross-stitch-bib",
+          "cross-stitch-bib-wallet",
+          "cross-stitch-bib-wallet-2",
+          "cross-stitch-bib-wallet-3",
+          "cross-stitch-wallet"
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "contact-us",
+    "title": "Contact Us",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Contact Us"
+      },
+      {
+        "type": "infobox",
+        "title": "Email Address",
+        "html": "<a href=\"mailto:contact@zahrasdesignstudio.com\">contact@zahrasdesignstudio.com</a>"
+      },
+      {
+        "type": "infobox",
+        "title": "WhatsApp",
+        "html": "<a href=\"https://wa.me/message/AXQCQFPDQFM7L1\">+968 7687 4070</a>"
+      },
+      {
+        "type": "text",
+        "html": "<p>Follow Us</p>"
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Get In Touch"
+      },
+      {
+        "type": "text",
+        "html": "Got suggestions or just want to say hello? Reach out to us anytime!"
+      },
+      {
+        "type": "contact-form"
+      }
+    ]
+  },
+  {
+    "slug": "cross-stitch-kits",
+    "title": "Cross Stitch Kits",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Cross Stitch Kits"
+      },
+      {
+        "type": "text",
+        "html": "<p>At Zahra’s Design Studio, we focus on designing, experimenting and assembling to create unique kits.</p>"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/4-450x500.png",
+          "/images/uploads/img-6660-450x500.jpg",
+          "/images/uploads/img-6772-450x500.jpg",
+          "/images/uploads/whatsapp-image-2023-01-30-at-9.48.12-pm-1-450x500.jpeg",
+          "/images/uploads/1-450x500.jpg"
+        ]
+      },
+      {
+        "type": "products",
+        "products": [
+          "ali-cross-stitch-kit",
+          "alsalam-ya-hussain",
+          "asala-cross-stitch-kit",
+          "ayat-al-kursy-cross-stitch-kit",
+          "ayat-alkursy-cross-stitch-kit",
+          "ayat-alkursy-cross-stitch-kit-2",
+          "bismillah-cross-stitch-kit",
+          "duaa-alnoor-cross-stitch-kit",
+          "hussain-mny",
+          "mood-cross-stitch-kit",
+          "names-of-allah-cross-stitch-kit",
+          "on-this-land-cross-stitch-kit",
+          "blue-cross-stitch-shawl-kit",
+          "dark-blue-cross-stitch-pillow-cover-kit",
+          "gray-cross-stitch-shawl-kit",
+          "green-cross-stitch-pillow-cover-kit",
+          "green-cross-stitch-shawl-kit",
+          "palestinian-embroidery-shawl-kit-pink",
+          "purple-cross-stitch-pillow-cover-kit",
+          "cross-stitch-shawl-kit-purple"
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "digital-patterns",
+    "title": "Digital Patterns",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Digital Patterns"
+      },
+      {
+        "type": "text",
+        "html": "<p>Our cross-stitch patterns are designed to make stitching fun and enjoyable. They are easy to follow, with clear instructions and detailed charts to guide you every step of the way. Whether you're a beginner or an experienced stitcher, our patterns make embroidery simple and rewarding.</p>"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/mockup-of-a-squared-art-print-on-a-plain-color-wall-36117-r-el2-1-450x500.png",
+          "/images/smartmockups-la1dw5ch-450x500.png",
+          "/images/minimalistic-embroidery-hoop-png-4-450x500.png",
+          "/images/smartmockups-la9nieql-450x500.jpg",
+          "/images/mockup-of-a-person-holding-a-squared-art-print-m31604-450x500.png",
+          "/images/mockup-of-an-art-print-hanging-in-a-restaurant-s-wall-generated-by-ai-m38966-450x500.png",
+          "/images/minimalistic-embroidery-hoop-png-6-450x500.png",
+          "/images/smartmockups-lb70odd8-450x500.png",
+          "/images/smartmockups-lhdbkw7x-450x500.jpg",
+          "/images/square-framed-art-print-template-near-other-art-prints-and-a-clock-a14773-450x500.png"
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Free Pattern"
+      },
+      {
+        "type": "text",
+        "html": "<p>Palestinian Flag Cross Stitch Pattern</p>"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Description:</strong></p><p>A cross stitch pattern of Palestinian flag - Digital PDF counted cross stich pattern – Free download</p><p>This counted cross stitch chart by Zahra Allawati is ready to download now using Adobe reader, print it out at home or view on your device and start stitching today.</p><p><strong>Chart Details:</strong></p>"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>PDF File Includes:</strong></p>"
+      },
+      {
+        "type": "text",
+        "html": "<p>You can stick to the color chart available, or create your own color chart.<br><br>If you have any questions about the pattern, please feel free to contact me, I'm happy to help.<br><br>Thank you &amp; enjoy stitching.</p>"
+      },
+      {
+        "type": "button",
+        "text": "Download Free Pattern",
+        "href": "/wp-content"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/smartmockups-lol8u08f-500x700.png",
+          "/images/smartmockups-lol8sl1g-1-500x700.png",
+          "/images/mockup-of-an-art-print-featuring-a-plant-and-a-small-clock-m3765-r-el2-500x700.png"
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Order Customized Pattern"
+      },
+      {
+        "type": "contact-form"
+      },
+      {
+        "type": "products",
+        "products": [
+          "4-muawathat-cross-stitch-pattern",
+          "afou-cross-stitch-pattern",
+          "afou-cross-stitch-pattern-2",
+          "ali-cross-stitch-pattern",
+          "allahuma-sally-alla-mohamed-cross-stitch-pattern",
+          "allahuma-sally-alla-mohamed-cross-stitch-pattern-2",
+          "alsalam-alfattah-cross-stitch-pattern",
+          "amoor-cross-stitch-pattern",
+          "ayat-al-noor-cross-stitch-pattern",
+          "ayat-alkursy-cross-stitch-pattern",
+          "ayat-alkursy-cross-stitch-pattern-2",
+          "ayat-alkursy-cross-stitch-pattern-3",
+          "disc-cross-stitch-pattern",
+          "on-this-land-cross-stitch-pattern",
+          "palestine-map-cross-stitch-pattern",
+          "palestinian-cross-stitch-pattern",
+          "palestinian-dice-cross-stitch-pattern",
+          "quarah-cross-stitch-pattern",
+          "shakla-1-cross-stitch-pattern",
+          "smood-cross-stitch-pattern",
+          "ahllan-ramadan-cross-stitch-pattern",
+          "eid-mubarak-cross-stitch-pattern",
+          "eid-said-cross-stitch-pattern",
+          "ramadan-kareem-cross-stitch-pattern",
+          "ramadan-mubarak-cross-stitch-pattern",
+          "sahtain-cross-stitch-pattern",
+          "abana-cross-stitch-pattern",
+          "adam-cross-stitch-pattern",
+          "arabic-alphabet-cross-stitch-pattern",
+          "baher-cross-stitch-pattern",
+          "best-mom-cross-stitch-pattern",
+          "flowers-cross-stitch-pattern",
+          "hope-cross-stitch-pattern",
+          "house-cross-stitch-pattern",
+          "house-cross-stitch-pattern-2",
+          "jurm-cross-stitch-pattern",
+          "kuwait-cross-stitch-pattern",
+          "mood-cross-stitch-pattern"
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "faqs",
+    "title": "FAQs",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "FAQs"
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Frequently Asked Questions"
+      },
+      {
+        "type": "accordion",
+        "items": [
+          {
+            "question": "Do you ship internationally?",
+            "answer": "<p>Yes, we have worldwide shipping.</p>"
+          },
+          {
+            "question": "Are your kits made for total beginners?",
+            "answer": "<p>Absolutely! We have beginners and intermediate kits. All beginner’s kits are designed for total beginner with a step-by-step guide to teach all the basics you will need and all kit patterns are easy to follow.</p>"
+          },
+          {
+            "question": "Why don’t you offer printed patterns?",
+            "answer": "<p>Our customers enjoy the flexibility of PDF patterns so they can choose to use them on a desktop, laptop, tablet or mobile device and zoom in. They can choose to print the patterns if they wish.</p>"
+          },
+          {
+            "question": "Can you design a custom pattern for me?",
+            "answer": "<p>Yes, we accept custom patterns. <a href=\"/digital-patterns\">Please fill this form</a>, we will review your request and get in touch with you via WhatsApp within 2 working days.</p>"
+          },
+          {
+            "question": "Can I sell the work once it is complete?",
+            "answer": "<p>Yes, you can sell your finished work, however, please do not sell, claim our pattern as your own, or use our photos.</p>"
+          },
+          {
+            "question": "Can I order a kit or handmade product as a gift?",
+            "answer": "<p>Yes! Please mark your order as a gift&nbsp;check out checkout, you can also include a gift note. If you would like to ship the gift directly to them, please enter their name, address, email and phone number when placing the order.</p>"
+          },
+          {
+            "question": "How do I apply I discount code?",
+            "answer": "<p>On the final checkout page, there is a box on the top of the page, above the billing detail in which you can enter any active discount code, and it will be automatically applied. Please note, discount codes cannot be combined with any other offers.</p>"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "free-patterns",
+    "title": "Free Patterns",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Free Patterns"
+      },
+      {
+        "type": "text",
+        "html": "<p>Palestinian Flag Cross Stitch Pattern</p>"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Chart Details:</strong></p>"
+      },
+      {
+        "type": "button",
+        "text": "Download Free Pattern",
+        "href": "/wp-content"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/smartmockups-lol8u08f-500x400.png",
+          "/images/uploads/smartmockups-lol8sl1g-1-500x400.png",
+          "/images/uploads/mockup-of-an-art-print-featuring-a-plant-and-a-small-clock-m3765-r-el2-500x400.png"
+        ]
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/smartmockups-loleuoyw-500x400.png",
+          "/images/uploads/smartmockups-lolezeat-500x400.png",
+          "/images/uploads/smartmockups-lolf1g6o-500x400.png",
+          "/images/uploads/smartmockups-lolf1jq6-500x400.png"
+        ]
+      },
+      {
+        "type": "text",
+        "html": "Palestinian Map Cross Stitch pattern"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Chart Details:</strong></p>"
+      },
+      {
+        "type": "button",
+        "text": "Download Free Pattern",
+        "href": "/wp-content"
+      },
+      {
+        "type": "text",
+        "html": "From The River Cross Stitch Pattern"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Chart Details:</strong></p>"
+      },
+      {
+        "type": "button",
+        "text": "Download Free Pattern",
+        "href": "/wp-content"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/smartmockups-lomjkwza-500x400.png",
+          "/images/uploads/smartmockups-lomjmdga-500x400.png",
+          "/images/uploads/smartmockups-lomjut9n-500x400.png"
+        ]
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/square-framed-art-print-on-a-pastel-color-wall-a15282-1-500x400.png",
+          "/images/uploads/t-shirt-mockup-of-a-bearded-man-with-a-tote-bag-sitting-on-a-concrete-structure-29412-1-500x400.png"
+        ]
+      },
+      {
+        "type": "text",
+        "html": "Gaza Cross Stitch Pattern"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Chart Details:</strong></p>"
+      },
+      {
+        "type": "button",
+        "text": "Download Free Pattern",
+        "href": "/wp-content"
+      }
+    ]
+  },
+  {
+    "slug": "handmade-products",
+    "title": "Handmade Products",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Handmade Products"
+      },
+      {
+        "type": "text",
+        "html": "<p>Handmade cross-stitch products from Zahra's Design Studio are crafted with care and high-quality materials. Designed and stitched by a skilled team, each piece combines creativity and durability.</p>"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/uploads/20220617-093822187-ios-450x500.jpg",
+          "/images/uploads/dd3d6051-9282-49a2-ba15-61366da958ae-450x500.jpg",
+          "/images/uploads/20220719-134825034-ios-1-450x500.jpg",
+          "/images/uploads/img-1225-450x500.jpg",
+          "/images/uploads/77d485c3-fbc9-4bb4-bef1-1f7eac66460e-450x500.jpg"
+        ]
+      },
+      {
+        "type": "products",
+        "products": [
+          "ayat-alkursy-framed-cross-stitch-green",
+          "ayat-alkursy-framed-cross-stitch-pink",
+          "surat-alikhlas-framed-cross-stitch-pink",
+          "surat-alnas-framed-cross-stitch",
+          "wsat-kl-she-rhma-walma-framed-cross-stitch",
+          "wzny-fyk-ya-rb-jmyl-framed-cross-stitch"
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "shipping-return",
+    "title": "Shipping & Return",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Shipping & Return"
+      },
+      {
+        "type": "text",
+        "html": "Shipping:"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>a. Local shipping:</strong></p><ul><li>Shipping coast is 2 OMR on all orders all over Oman, processing time for local orders is usually 2-3 working days.</li><li>Please note our dispatch times are 3 working days which is separate to shipping estimate times.</li></ul><p><strong>b. International Shipping: </strong></p><ul><li>Worldwide Shipping is available, shipping time is usually 5-7 working days.</li><li>Shipping rates are determined according to zone and weight of package.</li><li>Recipients of orders shipped outside of Oman will be responsible for all costs associated with import taxes.</li><li>Please note our dispatch times are 3 working days which is separate to shipping estimate times.</li></ul>"
+      },
+      {
+        "type": "text",
+        "html": "<p>Returns:</p>"
+      },
+      {
+        "type": "text",
+        "html": "<ul><li>You can return any physical item within 14 days of receipt.</li><li>To be eligible for a return, your item must be in the same condition that you received it, unused, and in its original packaging.</li><li>Please contact us at <a href=\"mailto:contact@zahrasdesignstudio.com\">contact@zahrasdesignstudio.com</a> including your order number and original email address you used at checkout.</li><li>You are responsible for the costs of returning an item. Please keep proof of postage for your own records.</li><li>Instant download items don’t accept returns, exchanges or cancellations. Please contact us about any problems with your order.</li></ul>"
+      }
+    ]
+  },
+  {
+    "slug": "shop",
+    "title": "Digital Patterns",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Digital Patterns"
+      },
+      {
+        "type": "text",
+        "html": "<p>Our cross-stitch patterns are designed to make stitching fun and enjoyable. They are easy to follow, with clear instructions and detailed charts to guide you every step of the way. Whether you're a beginner or an experienced stitcher, our patterns make embroidery simple and rewarding.</p>"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/mockup-of-a-squared-art-print-on-a-plain-color-wall-36117-r-el2-1-450x500.png",
+          "/images/smartmockups-la1dw5ch-450x500.png",
+          "/images/minimalistic-embroidery-hoop-png-4-450x500.png",
+          "/images/smartmockups-la9nieql-450x500.jpg",
+          "/images/mockup-of-a-person-holding-a-squared-art-print-m31604-450x500.png",
+          "/images/mockup-of-an-art-print-hanging-in-a-restaurant-s-wall-generated-by-ai-m38966-450x500.png",
+          "/images/minimalistic-embroidery-hoop-png-6-450x500.png",
+          "/images/smartmockups-lb70odd8-450x500.png",
+          "/images/smartmockups-lhdbkw7x-450x500.jpg",
+          "/images/square-framed-art-print-template-near-other-art-prints-and-a-clock-a14773-450x500.png"
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Free Pattern"
+      },
+      {
+        "type": "text",
+        "html": "<p>Palestinian Flag Cross Stitch Pattern</p>"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Description:</strong></p><p>A cross stitch pattern of Palestinian flag - Digital PDF counted cross stich pattern – Free download</p><p>This counted cross stitch chart by Zahra Allawati is ready to download now using Adobe reader, print it out at home or view on your device and start stitching today.</p><p><strong>Chart Details:</strong></p>"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>PDF File Includes:</strong></p>"
+      },
+      {
+        "type": "text",
+        "html": "<p>You can stick to the color chart available, or create your own color chart.<br><br>If you have any questions about the pattern, please feel free to contact me, I'm happy to help.<br><br>Thank you &amp; enjoy stitching.</p>"
+      },
+      {
+        "type": "button",
+        "text": "Download Free Pattern",
+        "href": "/wp-content"
+      },
+      {
+        "type": "gallery",
+        "images": [
+          "/images/smartmockups-lol8u08f-500x700.png",
+          "/images/smartmockups-lol8sl1g-1-500x700.png",
+          "/images/mockup-of-an-art-print-featuring-a-plant-and-a-small-clock-m3765-r-el2-500x700.png"
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "text": "Order Customized Pattern"
+      },
+      {
+        "type": "contact-form"
+      },
+      {
+        "type": "products",
+        "products": [
+          "4-muawathat-cross-stitch-pattern",
+          "afou-cross-stitch-pattern",
+          "afou-cross-stitch-pattern-2",
+          "ali-cross-stitch-pattern",
+          "allahuma-sally-alla-mohamed-cross-stitch-pattern",
+          "allahuma-sally-alla-mohamed-cross-stitch-pattern-2",
+          "alsalam-alfattah-cross-stitch-pattern",
+          "amoor-cross-stitch-pattern",
+          "ayat-al-noor-cross-stitch-pattern",
+          "ayat-alkursy-cross-stitch-pattern",
+          "ayat-alkursy-cross-stitch-pattern-2",
+          "ayat-alkursy-cross-stitch-pattern-3",
+          "disc-cross-stitch-pattern",
+          "on-this-land-cross-stitch-pattern",
+          "palestine-map-cross-stitch-pattern",
+          "palestinian-cross-stitch-pattern",
+          "palestinian-dice-cross-stitch-pattern",
+          "quarah-cross-stitch-pattern",
+          "shakla-1-cross-stitch-pattern",
+          "smood-cross-stitch-pattern",
+          "ahllan-ramadan-cross-stitch-pattern",
+          "eid-mubarak-cross-stitch-pattern",
+          "eid-said-cross-stitch-pattern",
+          "ramadan-kareem-cross-stitch-pattern",
+          "ramadan-mubarak-cross-stitch-pattern",
+          "sahtain-cross-stitch-pattern",
+          "abana-cross-stitch-pattern",
+          "adam-cross-stitch-pattern",
+          "arabic-alphabet-cross-stitch-pattern",
+          "baher-cross-stitch-pattern",
+          "best-mom-cross-stitch-pattern",
+          "flowers-cross-stitch-pattern",
+          "hope-cross-stitch-pattern",
+          "house-cross-stitch-pattern",
+          "house-cross-stitch-pattern-2",
+          "jurm-cross-stitch-pattern",
+          "kuwait-cross-stitch-pattern",
+          "mood-cross-stitch-pattern"
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "terms-conditions",
+    "title": "Terms & Conditions",
+    "description": null,
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 1,
+        "text": "Terms & Conditions"
+      },
+      {
+        "type": "text",
+        "html": "<p><strong>Introduction</strong></p><p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><p><strong>Use of the Website</strong></p><p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><p><strong>Orders &amp; Payments</strong></p><p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy.</p><p><strong>Orders &amp; Payments</strong></p><p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text.</p><p><strong>Privacy Policy</strong></p><p>Lorem Ipsum&nbsp;is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><p><strong>Changes to Terms &amp; Conditions</strong></p><p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting.</p>"
+      }
+    ]
+  }
+]

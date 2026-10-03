@@ -1,0 +1,129 @@
+{
+  "name": "Zahras Design Studio",
+  "tagline": "Crafted with Love",
+  "logo": "/images/icons/999-14.svg",
+  "mainMenu": [
+    {
+      "label": "About Us",
+      "href": "/about-us"
+    },
+    {
+      "label": "Shop",
+      "href": "#",
+      "children": [
+        {
+          "label": "Digital Patterns",
+          "href": "/digital-patterns"
+        },
+        {
+          "label": "Cross Stitch Kits",
+          "href": "/cross-stitch-kits"
+        },
+        {
+          "label": "Handmade Products",
+          "href": "/handmade-products"
+        },
+        {
+          "label": "Accessories",
+          "href": "/accessories-products"
+        },
+        {
+          "label": "Free Patterns",
+          "href": "/free-patterns"
+        }
+      ]
+    },
+    {
+      "label": "Contact Us",
+      "href": "/contact-us"
+    }
+  ],
+  "footerMenus": [
+    {
+      "title": "Information",
+      "items": [
+        {
+          "label": "Home",
+          "href": "/"
+        },
+        {
+          "label": "About Us",
+          "href": "/about-us"
+        },
+        {
+          "label": "Contact Us",
+          "href": "/contact-us"
+        }
+      ]
+    },
+    {
+      "title": "Shop",
+      "items": [
+        {
+          "label": "Digital Patterns",
+          "href": "/digital-patterns"
+        },
+        {
+          "label": "Cross Stitch Kits",
+          "href": "/cross-stitch-kits"
+        },
+        {
+          "label": "Handmade Products",
+          "href": "/handmade-products"
+        },
+        {
+          "label": "Accessories",
+          "href": "/accessories-products"
+        },
+        {
+          "label": "Free Patterns",
+          "href": "/free-patterns"
+        }
+      ]
+    },
+    {
+      "title": "Legal",
+      "items": [
+        {
+          "label": "Shipping & Return",
+          "href": "/shipping-return"
+        },
+        {
+          "label": "FAQs",
+          "href": "/faqs"
+        }
+      ]
+    }
+  ],
+  "footerBlocks": [],
+  "social": [
+    {
+      "network": "facebook",
+      "href": "https://www.facebook.com/people/Zahras-Design-Studio/100088950020454/?mibextid=LQQJ4d"
+    },
+    {
+      "network": "instagram",
+      "href": "http://www.instagram.com/zahraa.lawati/"
+    },
+    {
+      "network": "pinterest",
+      "href": "https://uk.pinterest.com/zahrasdesignstudio/"
+    },
+    {
+      "network": "youtube",
+      "href": "https://www.youtube.com/@ZahrasDesignStudio"
+    },
+    {
+      "network": "whatsapp",
+      "href": "https://wa.me/message/AXQCQFPDQFM7L1"
+    }
+  ],
+  "contact": {
+    "emails": [
+      "contact@zahrasdesignstudio.com"
+    ],
+    "phones": [
+      "96876874070"
+    ]
+  }
+}

@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Myriad Pro";
+  src: url("/fonts/myriadpro-regular.woff") format("woff");
+  font-display: swap;
+}
+@font-face {
+  font-family: "VIP Hakm";
+  src: url("/fonts/vip-hakm-light.woff") format("woff");
+  font-display: swap;
+}
+@font-face {
+  font-family: "VIP Hakm";
+  src: url("/fonts/vip-hakm-light-bold.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Autography";
+  src: url("/fonts/autography.woff") format("woff");
+  font-display: swap;
+}
+
+/* colors taken from the original theme settings */
+@theme {
+  --color-brand: #c0887b;
+  --color-brand-dark: #a46e62;
+  --color-brand-soft: #f6ece9;
+  --color-header: #e2c2b8; /* header background of the original theme */
+  --color-ink: #1e1e1e;
+  --color-heading: #242424;
+  --color-muted: #6b6b6b;
+  --color-line: #ece6e3;
+  /* Latin brand fonts first; Arabic glyphs fall back to IBM Plex Sans Arabic / Aref Ruqaa */
+  --font-sans: "Myriad Pro", var(--font-plex-arabic, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "VIP Hakm", var(--font-plex-arabic, "Myriad Pro"), "Myriad Pro", ui-serif, serif;
+  --font-script: "Autography", var(--font-ruqaa, cursive), cursive;
+}
+
+/* element defaults live in the base layer so utility classes (e.g. font-script) can override them */
+@layer base {
+  body {
+    background: #fff;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4 {
+    color: var(--color-heading);
+    font-family: var(--font-display);
+  }
+
+  /* Arabic: no letter-spacing (it breaks joined letters), slightly taller lines, bolder headings */
+  [dir="rtl"] {
+    letter-spacing: normal;
+  }
+  [dir="rtl"] body {
+    line-height: 1.8;
+  }
+  [dir="rtl"] :is(h1, h2, h3, h4) {
+    font-weight: 600;
+    letter-spacing: normal;
+  }
+}
+
+/* rich text coming from the extracted pages/products */
+.prose-zahra {
+  line-height: 1.75;
+  color: var(--color-ink);
+}
+.prose-zahra p { margin-block: 0.75em; }
+.prose-zahra h2, .prose-zahra h3, .prose-zahra h4 { margin-block: 1.2em 0.5em; font-weight: 700; }
+.prose-zahra h2 { font-size: 1.5rem; }
+.prose-zahra h3 { font-size: 1.25rem; }
+.prose-zahra ul { list-style: disc; padding-inline-start: 1.25rem; margin-block: 0.75em; }
+.prose-zahra ol { list-style: decimal; padding-inline-start: 1.25rem; margin-block: 0.75em; }
+.prose-zahra li { margin-block: 0.25em; }
+.prose-zahra a { color: var(--color-brand-dark); text-decoration: underline; text-underline-offset: 3px; }
+.prose-zahra img { border-radius: 0.75rem; margin-block: 1rem; }
+.prose-zahra strong { font-weight: 700; }
+
+/* ---------- admin login animations ---------- */
+@keyframes zds-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes zds-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -14px, 0) rotate(2deg); }
+}
+@keyframes zds-blob {
+  0%, 100% { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; transform: rotate(0deg) scale(1); }
+  50% { border-radius: 60% 40% 38% 62% / 55% 61% 39% 45%; transform: rotate(18deg) scale(1.06); }
+}
+@keyframes zds-stitch {
+  to { stroke-dashoffset: -64; }
+}
+@keyframes zds-draw {
+  from { stroke-dashoffset: 1200; }
+  to { stroke-dashoffset: 0; }
+}
+/* dashes flowing along a path; --o is the starting offset that lines them up with the artwork */
+@keyframes zds-flow {
+  from { stroke-dashoffset: var(--o, 0px); }
+  to { stroke-dashoffset: calc(var(--o, 0px) - 60px); }
+}
+@keyframes zds-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(3px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+.zds-rise { animation: zds-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.zds-float { animation: zds-float 7s ease-in-out infinite; }
+.zds-blob { animation: zds-blob 14s ease-in-out infinite; }
+.zds-stitch { stroke-dasharray: 10 6; animation: zds-stitch 3s linear infinite; }
+.zds-draw { stroke-dasharray: 1200; animation: zds-draw 2.6s ease-out both; }
+.zds-shake { animation: zds-shake 0.5s both; }
+.zds-flow { animation: zds-flow 3.2s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .zds-rise, .zds-float, .zds-blob, .zds-stitch, .zds-draw, .zds-shake, .zds-flow { animation: none; }
+}
