@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SiteDocument from "@/app/SiteDocument";
 import CartProvider from "@/components/cart/CartProvider";
 import CurrencyProvider from "@/components/providers/CurrencyProvider";
 import PwaProvider from "@/components/pwa/PwaProvider";
@@ -48,7 +49,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
   const [site, rates] = await Promise.all([getSite(), getRates()]);
 
   return (
-    <html lang={lang} dir={dirOf(lang)} className={`h-full antialiased ${plexArabic.variable} ${arefRuqaa.variable}`}>
+    <SiteDocument lang={lang} dir={dirOf(lang)} className={`h-full antialiased ${plexArabic.variable} ${arefRuqaa.variable}`} siteName={site.name}>
       <body className="flex min-h-full flex-col">
         <I18nProvider lang={lang}>
           <CurrencyProvider rates={rates}>
@@ -61,6 +62,6 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
           </CurrencyProvider>
         </I18nProvider>
       </body>
-    </html>
+    </SiteDocument>
   );
 }

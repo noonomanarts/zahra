@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SbcCredit } from "@/app/SiteDocument";
 import type { SiteSettings } from "@/db/schema";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { localizeHref, pick, type Locale } from "@/lib/i18n/config";
@@ -55,7 +56,10 @@ export default function Footer({ lang, site }: { lang: Locale; site: SiteSetting
           </div>
         ))}
       </div>
-      <div className="border-t border-brand/15 py-6 text-center text-sm text-muted">{t.footer.rights(year, site.name)}</div>
+      <div className="border-t border-brand/15 py-6 text-center text-sm text-muted">
+        {t.footer.rights(year, site.name)}
+        <SbcCredit lang={lang} className="mt-2" />
+      </div>
     </footer>
   );
 }
