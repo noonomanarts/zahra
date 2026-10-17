@@ -25,6 +25,8 @@ The server needs a writable `storage/` folder (database + uploaded images) — b
 | `npm run db:migrate` | apply migrations |
 | `npm run db:seed` | import `data/*.json` into the database (upserts by slug; creates the admin from `.env`) |
 | `npm run extract` | re-extract `data/*.json` from the static mirror in `theme/` |
+| `npm run test:auth` | test customer auth through production HTTP forms with a disposable database; run `npm run build` first |
+| `npm run test:pwa` | verify private-route and service-worker cache behavior |
 
 ## Admin panel (`/admin`)
 

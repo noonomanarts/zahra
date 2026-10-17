@@ -6,6 +6,7 @@ import type { AuthState } from "@/app/[lang]/auth-actions";
 import { useI18n } from "@/components/providers/I18nProvider";
 
 const field = "w-full rounded-xl border border-line bg-white px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10";
+const initialState: AuthState = {};
 
 export default function CustomerAuthForm({ mode, submitAction }: {
   mode: "login" | "register";
@@ -13,8 +14,8 @@ export default function CustomerAuthForm({ mode, submitAction }: {
 }) {
   const { t, href } = useI18n();
   const registering = mode === "register";
-  const [formState, action, pending] = useActionState<AuthState, FormData>(submitAction, {});
-  const state = formState ?? {};
+  const [formState, action, pending] = useActionState<AuthState, FormData>(submitAction, initialState);
+  const state = formState ?? initialState;
   const [showPassword, setShowPassword] = useState(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const a = t.auth;
