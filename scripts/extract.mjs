@@ -1,4 +1,4 @@
-// Extracts site content from the static mirror in ../theme into data/*.json
+// Extracts site content from the static mirror in theme/ into data/*.json
 // and copies the images/fonts that are actually used into public/.
 // Run with: npm run extract
 import * as cheerio from "cheerio";
@@ -6,7 +6,7 @@ import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
 
-const THEME = path.resolve(import.meta.dirname, "../../theme");
+const THEME = path.resolve(import.meta.dirname, "../theme");
 const DATA = path.resolve(import.meta.dirname, "../data");
 const PUBLIC = path.resolve(import.meta.dirname, "../public");
 
@@ -22,7 +22,7 @@ const usedImages = new Set();
 const IMAGES = path.join(THEME, "assets/images");
 const kebab = (s) => s.toLowerCase().replace(/[^a-z0-9.]+/g, "-").replace(/-{2,}/g, "-").replace(/^-|-$/g, "");
 const stem = (name) => kebab(path.parse(name).name).replace(/-\d+x\d+$/, "");
-// downloaded variants of each image, largest first (files were renamed to kebab-case in ../theme)
+// downloaded variants of each image, largest first (files were renamed to kebab-case in theme/)
 const variants = new Map();
 for (const f of fs.readdirSync(IMAGES).filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))) {
   const size = (f.match(/-(\d+)x(\d+)\.\w+$/) || [0, 1e5, 1e5]).slice(1).reduce((a, b) => a * b, 1);

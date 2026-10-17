@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source not "../theme";
 
 @font-face {
   font-family: "Myriad Pro";

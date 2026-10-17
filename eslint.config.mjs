@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Static source mirror used by the extraction script.
+    "theme/**",
   ]),
 ]);
 

@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The static mirror is only used by the extraction script.
+  outputFileTracingExcludes: {
+    "/*": ["./theme/**/*"],
+  },
   images: {
     // every image is served from this site (public/ and storage/uploads) – no remote hosts
     qualities: [75, 90],
@@ -14,6 +18,10 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
         ],
+      },
+      {
+        source: "/:lang(en|ar)/:page(account|login|register)",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
       {
         // the service worker must never be served stale, or updates would not reach visitors

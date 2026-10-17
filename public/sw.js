@@ -4,9 +4,9 @@
  *   pages (navigations)        network-first (4 s timeout) → cached copy → offline page of that language
  *   /_next/static/*            cache-first (file names are content-hashed)
  *   images, fonts, icons       stale-while-revalidate, capped
- *   admin, api, checkout, RSC  never cached
+ *   admin, api, checkout, account/auth, RSC  never cached
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const PRECACHE = `zds-precache-${VERSION}`;
 const PAGES = `zds-pages-${VERSION}`;
 const STATIC = `zds-static-${VERSION}`;
@@ -24,7 +24,7 @@ const PRECACHE_URLS = [
   "/fonts/autography.woff",
 ];
 const LIMITS = { [PAGES]: 40, [MEDIA]: 160 };
-const NEVER = /^\/(admin|api)(\/|$)|^\/(en|ar)\/checkout(\/|$)/;
+const NEVER = /^\/(admin|api)(\/|$)|^\/(en|ar)\/(checkout|account|login|register)(\/|$)/;
 
 // ---------- install: precache the shell + the CSS/JS the offline pages need ----------
 self.addEventListener("install", (event) => {
@@ -41,6 +41,8 @@ self.addEventListener("install", (event) => {
       }
       const staticCache = await caches.open(STATIC);
       await Promise.all([...assets].map((u) => staticCache.add(u).catch(() => {})));
+      // Replace v1 promptly so its broad page cache cannot retain new account pages.
+      if (await caches.has("zds-precache-v1")) await self.skipWaiting();
     })(),
   );
 });
@@ -83,7 +85,8 @@ async function page(event) {
   const cache = await caches.open(PAGES);
   try {
     const response = await withTimeout((async () => (await event.preloadResponse) || fetch(request))(), 4000);
-    if (response.ok && response.type === "basic" && !response.redirected) {
+    const privateResponse = /(?:private|no-store)/i.test(response.headers.get("Cache-Control") || "");
+    if (response.ok && response.type === "basic" && !response.redirected && !privateResponse) {
       event.waitUntil(cache.put(request, response.clone()).then(() => trim(PAGES)));
     }
     return response;

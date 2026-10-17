@@ -175,3 +175,23 @@ export const sessions = sqliteTable("sessions", {
   userId: integer("user_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
 });
+
+// ---------- customer auth (separate from administrator access) ----------
+
+export const customers = sqliteTable("customers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  ...timestamps,
+});
+
+export const customerSessions = sqliteTable(
+  "customer_sessions",
+  {
+    id: text("id").primaryKey(), // sha256 of a random cookie token
+    customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  },
+  (t) => [index("customer_sessions_expiry_idx").on(t.expiresAt)],
+);

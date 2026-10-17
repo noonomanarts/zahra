@@ -1,11 +1,13 @@
 {
-  "name": "web",
+  "name": "zahra",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:auth": "tsx --test tests/customer-auth.test.mts",
+    "test:pwa": "tsx --test tests/service-worker.test.mts",
     "lint": "eslint",
     "extract": "node scripts/extract.mjs",
     "db:generate": "drizzle-kit generate",
