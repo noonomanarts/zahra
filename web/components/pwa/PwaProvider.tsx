@@ -1,40 +1,12 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect -- browser-only state (install prompt, connectivity, SW) is read after mount */
-import Image from "next/image";
+/* eslint-disable react-hooks/set-state-in-effect -- browser-only state (connectivity, SW) is read after mount */
 import { useEffect, useState } from "react";
 import { useI18n } from "../providers/I18nProvider";
 
-type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
-
-const DISMISS_KEY = "zds-install-dismissed";
-const VISITS_KEY = "zds-visits";
-const SNOOZE_DAYS = 14;
-
-const storage = {
-  get: (k: string) => {
-    try {
-      return localStorage.getItem(k);
-    } catch {
-      return null;
-    }
-  },
-  set: (k: string, v: string) => {
-    try {
-      localStorage.setItem(k, v);
-    } catch {}
-  },
-};
-
-const isStandalone = () =>
-  window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
-
-/** Service worker registration + install banner, offline badge and update notice. */
+/** Service worker registration, offline badge and update notice. */
 export default function PwaProvider() {
   const { t } = useI18n();
-  const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
-  const [showInstall, setShowInstall] = useState<"prompt" | "ios" | null>(null);
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [online, setOnline] = useState(true);
   const [backOnline, setBackOnline] = useState(false);
@@ -62,34 +34,11 @@ export default function PwaProvider() {
     });
   }, []);
 
-  // --- install banner: after the second visit, unless installed or dismissed recently
+  // Keep installation user-initiated through the browser's menu.
   useEffect(() => {
-    if (isStandalone()) return;
-    const visits = Number(storage.get(VISITS_KEY) ?? 0) + 1;
-    storage.set(VISITS_KEY, String(visits));
-    const dismissed = Number(storage.get(DISMISS_KEY) ?? 0);
-    const snoozed = Date.now() - dismissed < SNOOZE_DAYS * 864e5;
-    const ready = visits >= 2 && !snoozed;
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e as InstallEvent);
-      if (ready) setTimeout(() => setShowInstall("prompt"), 4000);
-    };
-    const onInstalled = () => {
-      setShowInstall(null);
-      setInstallEvent(null);
-    };
+    const onPrompt = (event: Event) => event.preventDefault();
     window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    // iOS Safari has no install prompt: show the "Add to Home Screen" hint instead
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (ready && isIos()) timer = setTimeout(() => setShowInstall("ios"), 6000);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-      clearTimeout(timer);
-    };
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
   // --- connectivity
@@ -110,19 +59,6 @@ export default function PwaProvider() {
       clearTimeout(timer);
     };
   }, []);
-
-  const dismiss = () => {
-    storage.set(DISMISS_KEY, String(Date.now()));
-    setShowInstall(null);
-  };
-  const install = async () => {
-    if (!installEvent) return;
-    await installEvent.prompt();
-    const { outcome } = await installEvent.userChoice;
-    if (outcome === "dismissed") storage.set(DISMISS_KEY, String(Date.now()));
-    setInstallEvent(null);
-    setShowInstall(null);
-  };
 
   return (
     <>
@@ -147,44 +83,6 @@ export default function PwaProvider() {
             >
               {t.pwa.update}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* install banner */}
-      {showInstall && !waiting && (
-        <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center p-4 sm:bottom-4">
-          <div
-            role="dialog"
-            aria-labelledby="pwa-install-title"
-            className="zds-rise flex w-full max-w-md items-center gap-4 rounded-3xl border border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(164,110,98,0.45)] backdrop-blur"
-          >
-            <Image src="/icons/icon-192.png" alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-2xl" />
-            <div className="min-w-0 flex-1">
-              <p id="pwa-install-title" className="font-semibold text-ink">{t.pwa.installTitle}</p>
-              <p className="mt-0.5 text-sm leading-snug text-muted">
-                {showInstall === "ios" ? (
-                  <>
-                    {t.pwa.iosText}{" "}
-                    <svg className="inline h-4 w-4 align-text-bottom text-brand-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 3v12M8 7l4-4 4 4M6 11v9h12v-9" />
-                    </svg>
-                  </>
-                ) : (
-                  t.pwa.installText
-                )}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-col gap-1.5">
-              {showInstall === "prompt" && (
-                <button onClick={install} className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-dark">
-                  {t.pwa.install}
-                </button>
-              )}
-              <button onClick={dismiss} className="rounded-full px-4 py-1.5 text-xs text-muted transition hover:bg-brand-soft">
-                {t.pwa.notNow}
-              </button>
-            </div>
           </div>
         </div>
       )}

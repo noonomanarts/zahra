@@ -69,8 +69,8 @@ contacted for what can't be local: Paymob (payments), Bank Muscat (exchange rate
 - Service worker `public/sw.js` (production only): pages network-first with offline fallback (`/[lang]/offline`),
   hashed assets cache-first, images/fonts stale-while-revalidate. Admin, API and checkout are never cached.
   Bump `VERSION` in `sw.js` to reset every visitor's caches.
-- `components/pwa/PwaProvider.tsx`: registration, update notice ("new version – refresh"), offline badge and an install
-  banner (from the 2nd visit; iOS gets "Add to Home Screen" instructions; dismissal is remembered for 14 days).
+- `components/pwa/PwaProvider.tsx`: registration, update notice ("new version – refresh") and offline badge.
+  Installation is available through the browser menu; automatic install prompts are suppressed.
 - Installing requires HTTPS in production (localhost works for testing).
 
 ## Payments (Paymob)
