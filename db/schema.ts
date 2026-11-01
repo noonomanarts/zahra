@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import type { Block, L, MenuItem } from "@/lib/types";
+import type { Block, L, MenuItem, WorkshopFile, WorkshopVideo } from "@/lib/types";
 import type { CurrencyCode } from "@/lib/currency";
 
 const timestamps = {
@@ -12,6 +12,9 @@ const timestamps = {
 };
 
 // ---------- catalogue ----------
+
+export const PRODUCT_KINDS = ["product", "workshop"] as const;
+export type ProductKind = (typeof PRODUCT_KINDS)[number];
 
 export const products = sqliteTable(
   "products",
@@ -31,6 +34,12 @@ export const products = sqliteTable(
     description: text("description").notNull().default(""),
     descriptionAr: text("description_ar").notNull().default(""),
     related: text("related", { mode: "json" }).$type<string[]>().notNull().default([]),
+    /** "workshop": an online workshop whose videos and files unlock in the buyer's account */
+    kind: text("kind", { enum: PRODUCT_KINDS }).notNull().default("product"),
+    /** what one unit costs the studio (materials, printing…), used by the finance report */
+    unitCost: real("unit_cost"),
+    workshopVideos: text("workshop_videos", { mode: "json" }).$type<WorkshopVideo[]>().notNull().default([]),
+    workshopFiles: text("workshop_files", { mode: "json" }).$type<WorkshopFile[]>().notNull().default([]),
     ...timestamps,
   },
   (t) => [index("products_published_idx").on(t.published)],
@@ -83,6 +92,14 @@ export const pages = sqliteTable("pages", {
   ...timestamps,
 });
 
+/** Print My Design service options, edited in Admin → Settings. Fees are in OMR; null = quoted on WhatsApp. */
+export type PrintServiceSettings = {
+  fabrics: L[];
+  hoopSizes: number[]; // inches
+  asIsFee: number | null;
+  editsFee: number | null;
+};
+
 export type SiteSettings = {
   name: string;
   tagline: L;
@@ -93,6 +110,9 @@ export type SiteSettings = {
   contact: { emails: string[]; phones: string[] };
   shippingFee: number; // flat fee in store currency for orders with physical products
   currency: string;
+  /** WhatsApp number with country code (digits only); falls back to the first phone */
+  whatsapp?: string;
+  printService?: PrintServiceSettings;
 };
 
 /** Display rates: units of each currency per 1 OMR (prices are stored and charged in OMR). */
@@ -144,9 +164,15 @@ export const orders = sqliteTable(
     paymobOrderId: text("paymob_order_id"),
     paymobTransactionId: text("paymob_transaction_id"),
     paidAt: integer("paid_at", { mode: "timestamp" }),
+    // set when the customer was signed in at checkout (required for workshops)
+    customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
     ...timestamps,
   },
-  (t) => [index("orders_status_idx").on(t.status), index("orders_paymob_order_idx").on(t.paymobOrderId)],
+  (t) => [
+    index("orders_status_idx").on(t.status),
+    index("orders_paymob_order_idx").on(t.paymobOrderId),
+    index("orders_customer_idx").on(t.customerId),
+  ],
 );
 
 export const orderItems = sqliteTable("order_items", {
@@ -158,6 +184,8 @@ export const orderItems = sqliteTable("order_items", {
   unitPrice: real("unit_price").notNull(),
   quantity: integer("quantity").notNull(),
   digital: integer("digital", { mode: "boolean" }).notNull().default(false),
+  // the product's unit cost when the order was placed (finance report)
+  unitCost: real("unit_cost"),
 });
 
 // ---------- admin auth ----------
@@ -194,4 +222,67 @@ export const customerSessions = sqliteTable(
     expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   },
   (t) => [index("customer_sessions_expiry_idx").on(t.expiresAt)],
+);
+
+/** Workshop access given by the studio without an online order (e.g. paid in person). */
+export const workshopGrants = sqliteTable(
+  "workshop_grants",
+  {
+    customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [primaryKey({ columns: [t.customerId, t.productId] })],
+);
+
+// ---------- service requests (Customized Pattern, Print My Design) ----------
+
+export const REQUEST_TYPES = ["custom-pattern", "print-design"] as const;
+export type RequestType = (typeof REQUEST_TYPES)[number];
+export const REQUEST_STATUSES = ["new", "quoted", "accepted", "in-progress", "completed", "cancelled"] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+
+export type RequestFile = { name: string; file: string; size: number; type: string };
+
+export const serviceRequests = sqliteTable(
+  "service_requests",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    number: text("number").notNull().unique(),
+    type: text("type", { enum: REQUEST_TYPES }).notNull(),
+    status: text("status", { enum: REQUEST_STATUSES }).notNull().default("new"),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone").notNull(),
+    locale: text("locale").notNull().default("en"),
+    /** the answers of the form, by field name */
+    details: text("details", { mode: "json" }).$type<Record<string, string>>().notNull().default({}),
+    files: text("files", { mode: "json" }).$type<RequestFile[]>().notNull().default([]),
+    /** fee estimate shown to the customer (OMR), when the service has fixed fees */
+    estimate: real("estimate"),
+    adminNotes: text("admin_notes").notNull().default(""),
+    customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("service_requests_status_idx").on(t.status)],
+);
+
+// ---------- finance ----------
+
+/** "cost": cost of goods (materials, supplies, printing); "expense": running costs (shipping, ads, fees…). */
+export const ENTRY_KINDS = ["cost", "expense"] as const;
+export type EntryKind = (typeof ENTRY_KINDS)[number];
+
+export const financeEntries = sqliteTable(
+  "finance_entries",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    date: text("date").notNull(), // YYYY-MM-DD (Muscat)
+    kind: text("kind", { enum: ENTRY_KINDS }).notNull(),
+    category: text("category").notNull(),
+    description: text("description").notNull(),
+    amount: real("amount").notNull(), // OMR
+    ...timestamps,
+  },
+  (t) => [index("finance_entries_date_idx").on(t.date)],
 );

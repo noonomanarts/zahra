@@ -36,6 +36,8 @@ export function normalizeBlock(b: any): Block {
       return { ...b, text: toL(b.text) };
     case "testimonials":
       return { ...b, items: (b.items ?? []).map((i: any) => ({ ...i, text: toL(i.text), name: toL(i.name) })) };
+    case "new-arrivals":
+      return { type: "new-arrivals", limit: Math.min(Math.max(Math.round(Number(b.limit)) || 6, 1), 12) };
     default:
       return b;
   }

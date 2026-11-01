@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getProducts, getSite } from "@/lib/data";
+import { getProducts, getSite, newArrivals } from "@/lib/data";
+import { fixWhatsappLinks, whatsappDigits } from "@/lib/whatsapp";
 import { isFallback, localizeHref, pick, type Locale } from "@/lib/i18n/config";
 import type { Block, L, Product } from "@/lib/types";
 import { ProductGrid } from "./ProductCard";
@@ -43,11 +44,13 @@ function youtubeId(url: string) {
   return url.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/)?.[1] ?? null;
 }
 
-type Ctx = { lang: Locale; products: Map<string, Product>; email: string };
+type Ctx = { lang: Locale; products: Map<string, Product>; fresh: Product[]; email: string; whatsapp: string };
 
-function render(b: Group, key: number, { lang, products, email }: Ctx) {
+function render(b: Group, key: number, { lang, products, fresh, email, whatsapp }: Ctx) {
   const t = (text: L) => pick(text, lang);
-  const href = (h: string) => localizeHref(lang, h);
+  const href = (h: string) => localizeHref(lang, fixWhatsappLinks(h, whatsapp));
+  // content imported from the old site may still contain WhatsApp short links that no longer work
+  const html = (text: L): L => ({ en: fixWhatsappLinks(text.en, whatsapp), ar: fixWhatsappLinks(text.ar, whatsapp) });
   switch (b.type) {
     case "hero":
       return <Hero key={key} hero={b} lang={lang} />;
@@ -57,7 +60,7 @@ function render(b: Group, key: number, { lang, products, email }: Ctx) {
       return <Tag key={key} className={`mt-14 font-bold first:mt-0 ${size}`}>{t(b.text)}</Tag>;
     }
     case "text":
-      return <RichText key={key} text={b.html} lang={lang} className="mt-4 max-w-3xl" />;
+      return <RichText key={key} text={html(b.html)} lang={lang} className="mt-4 max-w-3xl" />;
     case "image":
       return (
         <Image
@@ -80,19 +83,37 @@ function render(b: Group, key: number, { lang, products, email }: Ctx) {
           ))}
         </div>
       );
-    case "tiles":
+    case "tiles": {
+      // Transparent compositions without a card. From sm up the row runs from browser edge to browser edge:
+      // the straight edges of the outer artworks meet the window edges, also in Arabic (kept in visual order).
+      const cols = b.items.length % 3 === 0 ? "sm:grid-cols-3" : b.items.length % 4 === 0 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2";
       return (
-        <div key={key} className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div key={key} dir="ltr" className={`mt-6 grid gap-x-4 gap-y-12 sm:mx-[calc(50%-50vw)] lg:gap-x-8 ${cols}`}>
           {b.items.map((tile) => (
-            <Link key={tile.href + tile.src} href={href(tile.href)} className="group relative aspect-[4/5] overflow-hidden rounded-3xl bg-brand-soft">
-              <Image src={tile.src} alt={t(tile.alt) || t(tile.text)} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
-              <span className="absolute inset-x-3 bottom-3 rounded-full bg-white/95 px-4 py-2.5 text-center text-sm shadow-sm transition-colors group-hover:bg-brand group-hover:text-white">
+            <Link
+              key={tile.href + tile.src}
+              href={href(tile.href)}
+              dir={lang === "ar" ? "rtl" : "ltr"}
+              className="group flex flex-col items-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-dark"
+            >
+              <span className="relative block aspect-[14/15] w-full">
+                <Image
+                  src={tile.src}
+                  alt={t(tile.alt) || t(tile.text)}
+                  fill
+                  sizes="(min-width: 640px) 34vw, 100vw"
+                  className="object-contain transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transform-none"
+                />
+              </span>
+              <span className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-dark/25 bg-white px-8 text-sm font-medium text-ink shadow-sm transition-colors duration-300 group-hover:border-brand-dark group-hover:bg-brand-dark group-hover:text-white">
                 {t(tile.text)}
+                <span aria-hidden="true" className="transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1">→</span>
               </span>
             </Link>
           ))}
         </div>
       );
+    }
     case "accordion":
       return (
         <div key={key} className="mt-8 divide-y divide-line rounded-3xl border border-line">
@@ -102,7 +123,7 @@ function render(b: Group, key: number, { lang, products, email }: Ctx) {
                 <span dir={isFallback(item.question, lang) ? "ltr" : undefined}>{t(item.question)}</span>
                 <span className="text-xl text-brand transition-transform group-open:rotate-45">+</span>
               </summary>
-              <RichText text={item.answer} lang={lang} className="mt-3 text-muted" />
+              <RichText text={html(item.answer)} lang={lang} className="mt-3 text-muted" />
             </details>
           ))}
         </div>
@@ -124,7 +145,7 @@ function render(b: Group, key: number, { lang, products, email }: Ctx) {
           {b.items.map((c, i) => (
             <div key={i} className="rounded-3xl border border-line p-6">
               {t(c.title) && <h3 className="text-xl font-bold">{t(c.title)}</h3>}
-              <RichText text={c.html} lang={lang} className="mt-2 text-muted" />
+              <RichText text={html(c.html)} lang={lang} className="mt-2 text-muted" />
             </div>
           ))}
         </div>
@@ -139,6 +160,12 @@ function render(b: Group, key: number, { lang, products, email }: Ctx) {
       return (
         <div key={key} className="mt-8">
           <ProductGrid lang={lang} products={b.products.map((s) => products.get(s)).filter((p): p is Product => !!p)} />
+        </div>
+      );
+    case "new-arrivals":
+      return (
+        <div key={key} className="mt-8">
+          <ProductGrid lang={lang} products={fresh.slice(0, b.limit)} isNew columns={b.limit % 3 === 0 && b.limit % 4 !== 0 ? 3 : 4} />
         </div>
       );
     case "testimonials":
@@ -163,7 +190,14 @@ function render(b: Group, key: number, { lang, products, email }: Ctx) {
 
 export default async function Blocks({ blocks, lang }: { blocks: Block[]; lang: Locale }) {
   const slugs = blocks.flatMap((b) => (b.type === "products" ? b.products : []));
-  const [products, site] = await Promise.all([getProducts(slugs, lang), getSite()]);
-  const ctx = { lang, products: new Map(products.map((p) => [p.slug, p])), email: site.contact.emails[0] ?? "" };
+  const limit = Math.max(0, ...blocks.map((b) => (b.type === "new-arrivals" ? b.limit : 0)));
+  const [products, fresh, site] = await Promise.all([getProducts(slugs, lang), limit ? newArrivals(lang, limit) : [], getSite()]);
+  const ctx = {
+    lang,
+    products: new Map(products.map((p) => [p.slug, p])),
+    fresh,
+    email: site.contact.emails[0] ?? "",
+    whatsapp: whatsappDigits(site),
+  };
   return <>{group(blocks).map((b, i) => render(b, i, ctx))}</>;
 }

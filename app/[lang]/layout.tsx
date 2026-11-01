@@ -8,12 +8,14 @@ import SiteDocument from "@/app/SiteDocument";
 import CartProvider from "@/components/cart/CartProvider";
 import CurrencyProvider from "@/components/providers/CurrencyProvider";
 import PwaProvider from "@/components/pwa/PwaProvider";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 import I18nProvider from "@/components/providers/I18nProvider";
 import { getRates } from "@/lib/currency-server";
 import { getSite } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LOCALES, dirOf, isLocale, pick } from "@/lib/i18n/config";
 import { PWA } from "@/lib/pwa/config";
+import { whatsappDigits, whatsappUrl } from "@/lib/whatsapp";
 import { arefRuqaa, plexArabic } from "../fonts";
 import "../globals.css";
 
@@ -57,8 +59,9 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
           <CurrencyProvider rates={rates}>
             <CartProvider>
               <Header lang={lang} logo={site.logo} name={site.name} menu={site.mainMenu} />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1 overflow-x-clip">{children}</main>
               <Footer lang={lang} site={site} />
+              <WhatsAppFloat href={whatsappUrl(whatsappDigits(site))} label={getDictionary(lang).whatsapp.chat} />
               <PwaProvider />
             </CartProvider>
           </CurrencyProvider>

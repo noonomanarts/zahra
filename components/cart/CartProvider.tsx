@@ -11,6 +11,8 @@ export type CartItem = {
   currency: string;
   image: string | null;
   digital: boolean;
+  /** online workshop: needs a signed-in customer at checkout */
+  workshop?: boolean;
   quantity: number;
 };
 

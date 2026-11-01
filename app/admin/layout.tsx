@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { count, eq } from "drizzle-orm";
+import { db, schema } from "@/db";
 import { getAdmin } from "@/lib/auth";
 import { dirOf } from "@/lib/i18n/config";
 import { getAdminT } from "@/lib/i18n/admin-server";
@@ -17,6 +19,9 @@ export const metadata: Metadata = {
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const [admin, { lang, t }] = await Promise.all([getAdmin(), getAdminT()]);
+  const [fresh] = admin
+    ? await db.select({ n: count() }).from(schema.serviceRequests).where(eq(schema.serviceRequests.status, "new"))
+    : [{ n: 0 }];
 
   return (
     <SiteDocument lang={lang} dir={dirOf(lang)} className={`h-full antialiased ${plexArabic.variable} ${arefRuqaa.variable}`}>
@@ -29,7 +34,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
               <aside className="border-b border-zinc-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-e lg:border-b-0">
                 <div className="flex h-full flex-col p-4">
                   <p className="px-2 py-3 text-sm font-semibold">Zahras Design Studio</p>
-                  <AdminNav />
+                  <AdminNav newRequests={fresh.n} />
                   <div className="mt-auto space-y-3 border-t border-zinc-200 pt-4">
                     <form action={setAdminLanguage}>
                       <input type="hidden" name="lang" value={lang === "ar" ? "en" : "ar"} />

@@ -11,6 +11,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { revalidateSite } from "@/lib/revalidate";
 import { saveImage } from "@/lib/uploads";
 import { readL } from "@/components/admin/ui";
+import type { L } from "@/lib/types";
 
 export type SettingsState = { error?: string; ok?: string };
 
@@ -50,6 +51,28 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
     }
   }
 
+  // Print My Design options
+  const fee = (name: string) => {
+    const v = String(formData.get(name) ?? "").trim();
+    return v === "" ? null : Number(v);
+  };
+  const hoopSizes = String(formData.get("hoopSizes") ?? "").split(/[,\s]+/).filter(Boolean).map(Number);
+  let fabrics: L[];
+  try {
+    fabrics = (JSON.parse(String(formData.get("fabrics") ?? "[]")) as unknown[]).map(toL).filter((f) => f.en || f.ar);
+  } catch {
+    return { error: t.settings.invalidPrint };
+  }
+  const printService = { fabrics, hoopSizes, asIsFee: fee("asIsFee"), editsFee: fee("editsFee") };
+  if (
+    !hoopSizes.length ||
+    hoopSizes.some((n) => !(n > 0 && n < 100)) ||
+    [printService.asIsFee, printService.editsFee].some((f) => f !== null && (Number.isNaN(f) || f < 0))
+  ) {
+    return { error: t.settings.invalidPrint };
+  }
+  const whatsapp = String(formData.get("whatsapp") ?? "").replace(/\D/g, "");
+
   const social = lines(formData.get("social")).map((href) => ({
     href,
     network:
@@ -67,6 +90,8 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
     shippingFee,
     mainMenu,
     footerMenus,
+    whatsapp,
+    printService,
   };
   await db.insert(schema.settings).values({ key: "site", value: site }).onConflictDoUpdate({ target: schema.settings.key, set: { value: site } });
   revalidateSite();

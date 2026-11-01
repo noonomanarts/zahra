@@ -12,7 +12,11 @@ import { checkout, type CheckoutState } from "./actions";
 
 const field = "w-full rounded-xl border border-line bg-white px-4 py-3 outline-none transition focus:border-brand";
 
-export default function CheckoutForm({ shippingFee, paymentOnline }: { shippingFee: number; paymentOnline: boolean }) {
+export default function CheckoutForm({ shippingFee, paymentOnline, customer }: {
+  shippingFee: number;
+  paymentOnline: boolean;
+  customer: { name: string; email: string } | null;
+}) {
   const { items, subtotal, ready } = useCart();
   const { lang, t, href } = useI18n();
   const { currency } = useCurrency();
@@ -36,6 +40,8 @@ export default function CheckoutForm({ shippingFee, paymentOnline }: { shippingF
   const shipping = needsShipping ? shippingFee : 0;
   const total = subtotal + shipping;
   const v = state.values ?? {};
+  const needsLogin = !customer && items.some((i) => i.workshop);
+  const next = `?next=${encodeURIComponent(href("/checkout"))}`;
 
   return (
     <form action={action} className="grid gap-10 lg:grid-cols-[1fr_380px]">
@@ -44,10 +50,21 @@ export default function CheckoutForm({ shippingFee, paymentOnline }: { shippingF
       <input type="hidden" name="currency" value={currency} />
 
       <div className="space-y-8">
+        {needsLogin && (
+          <div className="rounded-3xl border border-brand/30 bg-brand-soft/60 p-6" role="status">
+            <p className="font-medium">{t.checkout.workshopLogin}</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href={`${href("/login")}${next}`} className="rounded-full bg-brand-dark px-6 py-2.5 text-sm text-white transition-colors hover:bg-ink">{t.checkout.signIn}</Link>
+              <Link href={`${href("/register")}${next}`} className="rounded-full border border-brand-dark/40 bg-white px-6 py-2.5 text-sm text-brand-dark transition-colors hover:bg-brand-soft">{t.checkout.createAccount}</Link>
+            </div>
+          </div>
+        )}
+
         <fieldset className="grid gap-4 sm:grid-cols-2">
           <legend className="mb-4 text-2xl font-bold">{t.checkout.contact}</legend>
-          <input name="name" required placeholder={t.checkout.fullName} defaultValue={v.name} autoComplete="name" className={`${field} sm:col-span-2`} />
-          <input name="email" type="email" required dir="ltr" placeholder={t.checkout.email} defaultValue={v.email} autoComplete="email" className={`${field} rtl:text-right`} />
+          {customer && <p className="-mt-2 text-sm text-muted sm:col-span-2" dir="auto">{t.checkout.signedInAs(customer.email)}</p>}
+          <input name="name" required placeholder={t.checkout.fullName} defaultValue={v.name ?? customer?.name} autoComplete="name" className={`${field} sm:col-span-2`} />
+          <input name="email" type="email" required dir="ltr" placeholder={t.checkout.email} defaultValue={v.email ?? customer?.email} autoComplete="email" className={`${field} rtl:text-right`} />
           <input name="phone" type="tel" required dir="ltr" placeholder={t.checkout.phone} defaultValue={v.phone} autoComplete="tel" className={`${field} rtl:text-right`} />
         </fieldset>
 
@@ -92,7 +109,7 @@ export default function CheckoutForm({ shippingFee, paymentOnline }: { shippingF
         {state.error && <p role="alert" className="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-red-700">{state.error}</p>}
 
         <button
-          disabled={pending || !!state.redirectTo}
+          disabled={pending || !!state.redirectTo || needsLogin}
           className="mt-6 w-full rounded-full bg-brand px-6 py-4 text-white transition-colors hover:bg-brand-dark disabled:opacity-60"
         >
           {pending || state.redirectTo ? t.checkout.wait : paymentOnline ? t.checkout.payNow : t.checkout.placeOrder}

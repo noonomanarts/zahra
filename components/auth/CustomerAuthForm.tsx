@@ -8,8 +8,10 @@ import { useI18n } from "@/components/providers/I18nProvider";
 const field = "w-full rounded-xl border border-line bg-white px-4 py-3 text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10";
 const initialState: AuthState = {};
 
-export default function CustomerAuthForm({ mode, submitAction }: {
+export default function CustomerAuthForm({ mode, next, submitAction }: {
   mode: "login" | "register";
+  /** where to go after signing in, e.g. back to checkout */
+  next?: string;
   submitAction: (previous: AuthState, formData: FormData) => Promise<AuthState>;
 }) {
   const { t, href } = useI18n();
@@ -26,6 +28,7 @@ export default function CustomerAuthForm({ mode, submitAction }: {
 
   return (
     <form action={action} className="space-y-5" aria-busy={pending}>
+      {next && <input type="hidden" name="next" value={next} />}
       {registering && (
         <div>
           <label htmlFor="customer-name" className="mb-2 block text-sm font-medium">{a.name}</label>
@@ -75,7 +78,7 @@ export default function CustomerAuthForm({ mode, submitAction }: {
       </button>
       <p className="pt-1 text-center text-sm text-muted">
         {registering ? a.haveAccount : a.noAccount}{" "}
-        <Link href={href(registering ? "/login" : "/register")} className="font-medium text-brand-dark underline underline-offset-4">{registering ? a.login : a.register}</Link>
+        <Link href={`${href(registering ? "/login" : "/register")}${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-medium text-brand-dark underline underline-offset-4">{registering ? a.login : a.register}</Link>
       </p>
     </form>
   );

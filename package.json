@@ -8,12 +8,14 @@
     "start": "next start",
     "test:auth": "tsx --test tests/customer-auth.test.mts",
     "test:pwa": "tsx --test tests/service-worker.test.mts",
+    "test:features": "tsx --test tests/features.test.mts",
     "lint": "eslint",
     "extract": "node scripts/extract.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.mts",
     "db:seed": "tsx --env-file-if-exists=.env scripts/seed.mts",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:upgrade-content": "tsx --env-file-if-exists=.env scripts/upgrade-content.mts",
+    "db:setup": "npm run db:migrate && npm run db:seed && npm run db:upgrade-content"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

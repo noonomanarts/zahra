@@ -28,6 +28,11 @@ export async function savePage(_prev: PageFormState, formData: FormData): Promis
       const file = formData.get(`upload-${i}`);
       const upload = file instanceof File && file.size > 0 ? file : null;
       if (block.type === "image" && upload) block.src = await saveImage(upload);
+      if (block.type === "gallery") {
+        for (const extra of formData.getAll(`upload-gallery-${i}`)) {
+          if (extra instanceof File && extra.size > 0) block.images.push(await saveImage(extra));
+        }
+      }
       if (block.type === "hero") {
         if (upload) block.image = await saveImage(upload);
         const bg = formData.get(`upload-bg-${i}`);

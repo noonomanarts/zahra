@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { CURRENCIES, CURRENCY_INFO, type CurrencyCode } from "@/lib/currency";
 import { LOCALE_COOKIE, LOCALE_NAMES, localizeHref, pick, type Locale } from "@/lib/i18n/config";
@@ -56,6 +56,83 @@ function CurrencySwitch() {
   );
 }
 
+type NavItem = { label: string; href: string; children?: { label: string; href: string }[] };
+
+const chevron = (
+  <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+    <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
+/** Desktop menu item with a dropdown that opens on hover, keyboard focus or tap. */
+function NavDropdown({ item, href, active, isActive }: { item: NavItem; href: (h: string) => string; active: boolean; isActive: (h: string) => boolean }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- close after navigating
+  useEffect(() => setOpen(false), [pathname]);
+
+  return (
+    <div
+      ref={box}
+      className="relative flex items-center"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onBlur={(e) => !box.current?.contains(e.relatedTarget as Node) && setOpen(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          setOpen(false);
+          box.current?.querySelector<HTMLButtonElement>("button")?.focus();
+        }
+      }}
+    >
+      <Link
+        href={href(item.href)}
+        aria-current={active ? "page" : undefined}
+        className={`py-7 text-[15px] whitespace-nowrap transition-colors hover:text-brand-dark ${active ? "font-semibold text-brand-dark" : ""}`}
+      >
+        {item.label}
+      </Link>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={t.nav.submenu(item.label)}
+        onClick={() => setOpen((o) => !o)}
+        className={`ms-0.5 grid h-7 w-6 place-items-center rounded transition-transform hover:text-brand-dark focus-visible:outline-2 focus-visible:outline-brand-dark ${open ? "rotate-180" : ""}`}
+      >
+        {chevron}
+      </button>
+      <div
+        className={`absolute start-1/2 top-full z-50 w-72 -translate-x-1/2 pt-1 transition duration-150 rtl:translate-x-1/2 ${open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0"}`}
+      >
+        <div className="rounded-2xl border border-line bg-white p-2 shadow-xl shadow-ink/5">
+          <ul>
+            {item.children!.map((c) => (
+              <li key={c.href}>
+                <Link
+                  href={href(c.href)}
+                  aria-current={isActive(c.href) ? "page" : undefined}
+                  className={`flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-sm transition-colors hover:bg-brand-soft hover:text-brand-dark ${isActive(c.href) ? "bg-brand-soft/60 font-medium text-brand-dark" : ""}`}
+                >
+                  {c.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-1 border-t border-line pt-1">
+            <Link href={href(item.href)} className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-medium text-brand-dark transition-colors hover:bg-brand-soft">
+              {t.shop.browseAll(item.label)}
+              <span aria-hidden="true" className="rtl:rotate-180">→</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Header({ lang, logo, name, menu }: {
   lang: Locale;
   logo: string | null;
@@ -85,16 +162,17 @@ export default function Header({ lang, logo, name, menu }: {
     return () => controller.abort();
   }, [pathname]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the mobile menu closes after navigating
+  useEffect(() => setOpen(false), [pathname]);
+
   const href = (h: string) => localizeHref(lang, h);
-  const items = [
-    { label: t.nav.home, href: "/", children: undefined },
-    ...menu.map((m) => ({
-      label: pick(m.label, lang),
-      href: m.href === "#" ? "/shop" : m.href,
-      children: m.children?.map((c) => ({ label: pick(c.label, lang), href: c.href })),
-    })),
-  ];
-  const isActive = (h: string) => (h === "/" ? pathname === `/${lang}` : pathname.startsWith(href(h)));
+  const items: NavItem[] = menu.map((m) => ({
+    label: pick(m.label, lang),
+    href: m.href === "#" ? "/shop" : m.href,
+    children: m.children?.length ? m.children.map((c) => ({ label: pick(c.label, lang), href: c.href })) : undefined,
+  }));
+  const isActive = (h: string) => (h === "/" ? pathname === `/${lang}` : pathname === href(h) || pathname.startsWith(`${href(h)}/`));
+  const itemActive = (item: NavItem) => isActive(item.href) || !!item.children?.some((c) => isActive(c.href));
 
   return (
     <header className="sticky top-0 z-40 shadow-sm">
@@ -108,7 +186,6 @@ export default function Header({ lang, logo, name, menu }: {
                 href={href("/account")}
                 title={customer.name}
                 aria-current={isActive("/account") ? "page" : undefined}
-                onClick={() => setOpen(false)}
                 className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -122,7 +199,6 @@ export default function Header({ lang, logo, name, menu }: {
                 <Link
                   href={href("/login")}
                   aria-current={isActive("/login") ? "page" : undefined}
-                  onClick={() => setOpen(false)}
                   className="inline-flex min-h-9 items-center rounded-full px-2 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3"
                 >
                   {t.nav.login}
@@ -130,7 +206,6 @@ export default function Header({ lang, logo, name, menu }: {
                 <Link
                   href={href("/register")}
                   aria-current={isActive("/register") ? "page" : undefined}
-                  onClick={() => setOpen(false)}
                   className="inline-flex min-h-8 items-center rounded-full border border-white/40 px-2.5 transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3"
                 >
                   {t.nav.register}
@@ -147,64 +222,90 @@ export default function Header({ lang, logo, name, menu }: {
       </div>
 
       <div className="bg-header">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 xl:gap-6">
           <Link href={href("/")} aria-label={name} className="shrink-0">
-            {logo ? <Image src={logo} alt={name} width={146} height={56} priority className="h-12 w-auto" /> : name}
+            {logo ? <Image src={logo} alt={name} width={146} height={56} priority className="h-11 w-auto xl:h-12" /> : name}
           </Link>
 
-          <nav className="hidden items-center gap-8 lg:flex" aria-label={t.nav.mainNav}>
-            {items.map((item) => (
-              <div key={item.href + item.label} className="group relative">
+          <nav className="hidden items-center gap-5 lg:flex xl:gap-7" aria-label={t.nav.mainNav}>
+            {items.map((item) =>
+              item.children ? (
+                <NavDropdown key={item.href + item.label} item={item} href={href} active={itemActive(item)} isActive={isActive} />
+              ) : (
                 <Link
+                  key={item.href + item.label}
                   href={href(item.href)}
-                  className={`py-7 text-[15px] transition-colors hover:text-brand-dark ${isActive(item.href) ? "font-semibold text-brand-dark" : ""}`}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={`py-7 text-[15px] whitespace-nowrap transition-colors hover:text-brand-dark ${isActive(item.href) ? "font-semibold text-brand-dark" : ""}`}
                 >
                   {item.label}
-                  {item.children && <span className="ms-1 text-xs">▾</span>}
                 </Link>
-                {item.children && (
-                  <div className="invisible absolute start-1/2 top-full w-56 -translate-x-1/2 rounded-xl border border-line bg-white p-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 rtl:translate-x-1/2">
-                    {item.children.map((c) => (
-                      <Link key={c.href} href={href(c.href)} className="block rounded-lg px-4 py-2.5 text-sm hover:bg-brand-soft hover:text-brand-dark">
-                        {c.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              ),
+            )}
           </nav>
 
           <div className="flex items-center gap-3">
             <CartButton />
             <Link
               href={href("/shop")}
-              className="hidden rounded-full bg-brand-dark px-5 py-2.5 text-sm text-white transition-colors hover:bg-ink sm:inline-block"
+              className="hidden rounded-full bg-brand-dark px-5 py-2.5 text-sm whitespace-nowrap text-white transition-colors hover:bg-ink sm:inline-block lg:hidden 2xl:inline-block"
             >
               {t.nav.shopNow}
             </Link>
-            <button className="rounded-lg p-2 lg:hidden" aria-label={t.nav.toggleMenu} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-              <span className="block h-0.5 w-6 bg-ink" />
-              <span className="mt-1.5 block h-0.5 w-6 bg-ink" />
-              <span className="mt-1.5 block h-0.5 w-6 bg-ink" />
+            <button
+              className="grid h-11 w-11 place-items-center rounded-xl lg:hidden"
+              aria-label={t.nav.toggleMenu}
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              onClick={() => setOpen((o) => !o)}
+            >
+              <span className="relative block h-4 w-6" aria-hidden="true">
+                <span className={`absolute inset-x-0 top-0 h-0.5 bg-ink transition ${open ? "top-[7px] rotate-45" : ""}`} />
+                <span className={`absolute inset-x-0 top-[7px] h-0.5 bg-ink transition ${open ? "opacity-0" : ""}`} />
+                <span className={`absolute inset-x-0 top-[14px] h-0.5 bg-ink transition ${open ? "top-[7px] -rotate-45" : ""}`} />
+              </span>
             </button>
           </div>
         </div>
 
         {open && (
-          <nav className="border-t border-ink/10 bg-header px-4 py-4 lg:hidden" aria-label={t.nav.mainNav}>
-            {items.map((item) => (
-              <div key={item.href + item.label}>
-                <Link href={href(item.href)} onClick={() => setOpen(false)} className="block py-2.5 text-base">
-                  {item.label}
-                </Link>
-                {item.children?.map((c) => (
-                  <Link key={c.href} href={href(c.href)} onClick={() => setOpen(false)} className="block py-2 ps-4 text-sm text-muted">
-                    {c.label}
-                  </Link>
-                ))}
-              </div>
-            ))}
+          <nav id="mobile-menu" className="max-h-[calc(100dvh-7.75rem)] overflow-y-auto border-t border-ink/10 bg-header px-4 pt-2 pb-6 lg:hidden" aria-label={t.nav.mainNav}>
+            <ul className="divide-y divide-ink/10">
+              <li>
+                <Link href={href("/")} aria-current={isActive("/") ? "page" : undefined} className="flex min-h-12 items-center text-base">{t.nav.home}</Link>
+              </li>
+              {items.map((item) => (
+                <li key={item.href + item.label}>
+                  {item.children ? (
+                    <details className="group" open={itemActive(item)}>
+                      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-base [&::-webkit-details-marker]:hidden">
+                        <span className={itemActive(item) ? "font-semibold text-brand-dark" : ""}>{item.label}</span>
+                        <span className="grid h-8 w-8 place-items-center transition-transform group-open:rotate-180">{chevron}</span>
+                      </summary>
+                      <ul className="mb-3 space-y-0.5 rounded-2xl bg-white/50 p-2">
+                        {item.children.map((c) => (
+                          <li key={c.href}>
+                            <Link href={href(c.href)} aria-current={isActive(c.href) ? "page" : undefined} className={`flex min-h-11 items-center rounded-xl px-3 text-[15px] ${isActive(c.href) ? "bg-white font-medium text-brand-dark" : "text-ink/80"}`}>
+                              {c.label}
+                            </Link>
+                          </li>
+                        ))}
+                        <li>
+                          <Link href={href(item.href)} className="flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-brand-dark">
+                            {t.shop.browseAll(item.label)} <span aria-hidden="true" className="rtl:rotate-180">→</span>
+                          </Link>
+                        </li>
+                      </ul>
+                    </details>
+                  ) : (
+                    <Link href={href(item.href)} aria-current={isActive(item.href) ? "page" : undefined} className={`flex min-h-12 items-center text-base ${isActive(item.href) ? "font-semibold text-brand-dark" : ""}`}>
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <Link href={href("/shop")} className="mt-5 flex min-h-12 items-center justify-center rounded-full bg-brand-dark text-white">{t.nav.shopNow}</Link>
           </nav>
         )}
       </div>

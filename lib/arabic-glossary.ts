@@ -1,0 +1,48 @@
+/**
+ * Arabic for the short texts imported from the old (English-only) site: menus, page titles, headings and
+ * buttons. Used once by scripts/upgrade-content.mts – it only fills Arabic fields that are still empty.
+ */
+export const ARABIC_GLOSSARY: Record<string, string> = {
+  Home: "الرئيسية",
+  "About Us": "من نحن",
+  "Contact Us": "تواصل معنا",
+  Shop: "المتجر",
+  Information: "معلومات",
+  Legal: "السياسات",
+  "Shipping & Return": "الشحن والإرجاع",
+  FAQs: "الأسئلة الشائعة",
+  "Frequently Asked Questions": "الأسئلة الشائعة",
+  "Terms & Conditions": "الشروط والأحكام",
+  "Handmade Products": "منتجات يدوية",
+  Accessories: "الإكسسوارات",
+  "Free Patterns": "نماذج مجانية",
+  "Free Pattern": "نموذج مجاني",
+  "Digital Patterns": "النماذج الرقمية",
+  "Cross Stitch Kits": "أطقم الكروس ستيتش",
+  "Download Free Pattern": "حمّل النموذج المجاني",
+  "Learn More": "اعرف المزيد",
+  "View Products": "عرض المنتجات",
+  "contact us": "تواصل معنا",
+  "Online Review": "تقييم عبر الإنترنت",
+  "Patterns Sold​": "نموذج مُباع",
+  "Patterns Sold": "نموذج مُباع",
+  "Trainee by Zahra Al-lawati": "متدرب مع زهراء اللواتي",
+  "Find Our Products In": "تجدون منتجاتنا في",
+  "Get In Touch": "تواصل معنا",
+  "Get in Touch": "تواصل معنا",
+  "My Wedding Dress": "فستان زفافي",
+  "Order Customized Pattern": "اطلب نموذجًا حسب الطلب",
+  Reviews: "آراء العملاء",
+  "Who We Are": "من نحن",
+  Workshops: "الورش",
+  "Worldwide Shipping is Available": "الشحن متاح لجميع أنحاء العالم",
+  "Stitched with Care": "مطرّز بعناية",
+  "Crafted with Love": "صُنع بحب",
+  "Email Address": "البريد الإلكتروني",
+  WhatsApp: "واتساب",
+  "Zahras Design Studio – Crafted with Love": "زهراء ستوديو – صُنع بحب",
+  "<p>We are a top company providing Arabic cross stitch patterns in an easy and distinctive manner. Additionally, we offer a variety of cross stitch kits suitable for both beginners and experts.</p>":
+    "<p>نقدّم نماذج كروس ستيتش عربية بأسلوب سهل ومميز، إلى جانب تشكيلة من أطقم الكروس ستيتش المناسبة للمبتدئين والمحترفين.</p>",
+  "<p>At Zahra’s Design Studio, we focus on designing, experimenting and assembling to create unique kits.</p>":
+    "<p>في زهراء ستوديو نصمم ونجرب ونجمع كل التفاصيل لنصنع أطقمًا فريدة.</p>",
+};

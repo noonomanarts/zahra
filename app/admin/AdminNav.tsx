@@ -7,15 +7,17 @@ import { useAdminI18n } from "@/components/admin/AdminI18n";
 const ITEMS = [
   { href: "/admin", key: "dashboard" },
   { href: "/admin/orders", key: "orders" },
+  { href: "/admin/requests", key: "requests" },
   { href: "/admin/products", key: "products" },
   { href: "/admin/categories", key: "categories" },
   { href: "/admin/tags", key: "tags" },
   { href: "/admin/pages", key: "pages" },
+  { href: "/admin/finance", key: "finance" },
   { href: "/admin/currencies", key: "currencies" },
   { href: "/admin/settings", key: "settings" },
 ] as const;
 
-export default function AdminNav() {
+export default function AdminNav({ newRequests = 0 }: { newRequests?: number }) {
   const pathname = usePathname();
   const { t } = useAdminI18n();
   return (
@@ -31,6 +33,11 @@ export default function AdminNav() {
             }`}
           >
             {t.nav[item.key]}
+            {item.key === "requests" && newRequests > 0 && (
+              <span className={`ms-2 inline-grid min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-semibold ${active ? "bg-white text-zinc-900" : "bg-brand-dark text-white"}`}>
+                {newRequests}
+              </span>
+            )}
           </Link>
         );
       })}

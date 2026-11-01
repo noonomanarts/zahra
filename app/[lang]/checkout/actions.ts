@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { getCustomer } from "@/lib/customer-auth";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale } from "@/lib/i18n/config";
 import { CheckoutError, placeOrder } from "@/lib/orders";
@@ -29,9 +30,10 @@ export async function checkout(_prev: CheckoutState, formData: FormData): Promis
   const appUrl = process.env.APP_URL ?? `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
 
   try {
+    const customer = await getCustomer();
     const { redirectTo } = await placeOrder(
       { ...values, name: values.name, email: values.email, phone: values.phone, items },
-      { appUrl, lang, displayCurrency: String(formData.get("currency") ?? "") },
+      { appUrl, lang, displayCurrency: String(formData.get("currency") ?? ""), customerId: customer?.id ?? null },
     );
     return { redirectTo };
   } catch (e) {

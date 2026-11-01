@@ -29,15 +29,15 @@ export default function SiteDocument({ children, siteName = "Zahras Design Studi
   );
 }
 
-export function SbcCredit({ lang, className = "" }: { lang: Locale; className?: string }) {
+export function SbcCredit({ lang, className = "", inverted = false }: { lang: Locale; className?: string; inverted?: boolean }) {
   return (
-    <p className={`text-xs text-muted ${className}`}>
+    <p className={`text-xs ${inverted ? "text-footer-text" : "text-muted"} ${className}`}>
       {lang === "ar" ? "تصميم وتطوير " : "Designed & built by "}
       <a
         href={`https://sbc.om/?utm_source=${SITE_DOMAIN}&utm_medium=referral&utm_campaign=footer-credit`}
         target="_blank"
         rel="noopener"
-        className="transition-colors hover:text-brand-dark"
+        className={`transition-colors ${inverted ? "hover:text-white" : "hover:text-brand-dark"}`}
       >
         SBC
       </a>

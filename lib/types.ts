@@ -21,10 +21,15 @@ export type Block =
   | { type: "infobox"; title: L; html: L }
   | { type: "button"; text: L; href: string }
   | { type: "products"; products: string[] }
+  /** newest in-stock products, filled automatically */
+  | { type: "new-arrivals"; limit: number }
   | { type: "testimonials"; items: { text: L; name: L; image: string | null }[] }
   | { type: "contact-form" };
 
 export type MenuItem = { label: L; href: string; children?: MenuItem[] };
+
+export type WorkshopVideo = { title: L; url: string };
+export type WorkshopFile = { id: string; name: string; file: string; size: number };
 
 /** A product as shown on the storefront, already localized. */
 export type Product = {
@@ -44,6 +49,10 @@ export type Product = {
   related: string[];
   categories: string[];
   tags: string[];
+  kind: "product" | "workshop";
+  createdAt: Date;
+  /** counts only – the videos and files themselves are only sent to buyers */
+  workshop: { videos: number; files: number } | null;
 };
 
 export type Term = { id: number; slug: string; name: string; nameI18n: L; count: number };

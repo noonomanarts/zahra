@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import { getCustomer } from "@/lib/customer-auth";
 import { getSite } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale } from "@/lib/i18n/config";
@@ -16,12 +17,12 @@ export default async function CheckoutPage({ params }: PageProps<"/[lang]/checko
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDictionary(lang);
-  const site = await getSite();
+  const [site, customer] = await Promise.all([getSite(), getCustomer()]);
   return (
     <>
       <PageHeader title={t.checkout.title} lang={lang} crumbs={[{ label: t.cart.title, href: "/cart" }]} />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <CheckoutForm shippingFee={site.shippingFee} paymentOnline={paymobEnabled()} />
+        <CheckoutForm shippingFee={site.shippingFee} paymentOnline={paymobEnabled()} customer={customer && { name: customer.name, email: customer.email }} />
       </div>
     </>
   );

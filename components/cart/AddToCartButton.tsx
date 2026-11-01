@@ -1,18 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart, type CartItem } from "./CartProvider";
 import { useI18n } from "../providers/I18nProvider";
 
-export default function AddToCartButton({ item, disabled }: { item: Omit<CartItem, "quantity">; disabled?: boolean }) {
+export default function AddToCartButton({ item, disabled, buyNow }: { item: Omit<CartItem, "quantity">; disabled?: boolean; buyNow?: string }) {
   const { add } = useCart();
   const { t, href } = useI18n();
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
   if (disabled) {
     return <p className="mt-8 rounded-2xl bg-brand-soft px-5 py-4 text-muted">{t.product.outOfStockLong}</p>;
+  }
+
+  // workshops: one click to checkout
+  if (buyNow) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          add(item, 1);
+          router.push(href("/checkout"));
+        }}
+        className="mt-8 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-brand-dark px-10 text-white transition-colors hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-dark sm:w-auto"
+      >
+        {buyNow}
+        <span aria-hidden="true" className="rtl:rotate-180">→</span>
+      </button>
+    );
   }
 
   return (

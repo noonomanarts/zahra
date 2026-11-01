@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getSite } from "@/lib/data";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { paymobEnabled } from "@/lib/paymob";
+import { getPrintService } from "@/lib/requests";
 import { Card, PageTitle } from "@/components/admin/ui";
 import { PasswordForm, SiteSettingsForm } from "./SettingsForms";
 
@@ -11,12 +12,12 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   await requireAdmin();
   const { t } = await getAdminT();
-  const site = await getSite();
+  const [site, printService] = await Promise.all([getSite(), getPrintService()]);
   return (
     <>
       <PageTitle title={t.settings.title} />
       <div className="space-y-6">
-        <SiteSettingsForm site={site} />
+        <SiteSettingsForm site={site} printService={printService} />
         <Card title={t.settings.payments}>
           <p className="text-sm">
             {t.settings.status}:{" "}

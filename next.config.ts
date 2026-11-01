@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
       {
+        // workshop pages and order history inside the account
+        source: "/:lang(en|ar)/account/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
         // the service worker must never be served stale, or updates would not reach visitors
         source: "/sw.js",
         headers: [
@@ -37,8 +42,9 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
-    // admin product forms upload images through Server Actions
-    serverActions: { bodySizeLimit: "10mb" },
+    // uploads go through Server Actions: product images, workshop files (admin) and the
+    // Customized Pattern / Print My Design attachments (max 25 MB per request, checked in lib/requests.ts)
+    serverActions: { bodySizeLimit: "30mb" },
     // the store ([lang]) and the admin have separate root layouts
     globalNotFound: true,
   },

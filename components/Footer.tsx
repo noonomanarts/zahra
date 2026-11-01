@@ -4,25 +4,34 @@ import { SbcCredit } from "@/app/SiteDocument";
 import type { SiteSettings } from "@/db/schema";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { localizeHref, pick, type Locale } from "@/lib/i18n/config";
+import { fixWhatsappLinks, whatsappDigits } from "@/lib/whatsapp";
 
 export default function Footer({ lang, site }: { lang: Locale; site: SiteSettings }) {
   const t = getDictionary(lang);
   const year = new Date().getFullYear();
+  const whatsapp = whatsappDigits(site);
   return (
-    <footer className="mt-24 bg-brand-soft">
+    <footer className="mt-24 bg-footer text-footer-text">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-2">
           {site.logo && <Image src={site.logo} alt={site.name} width={146} height={56} className="h-12 w-auto" />}
-          <p className="mt-4 max-w-sm text-muted">{pick(site.tagline, lang)}</p>
+          <p className="mt-4 max-w-sm">{pick(site.tagline, lang)}</p>
           <ul className="mt-6 space-y-2 text-sm">
+            {whatsapp && (
+              <li>
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 transition-colors hover:text-white">
+                  <span className="font-medium text-white">{t.whatsapp.short}:</span> <bdi dir="ltr">+{whatsapp}</bdi>
+                </a>
+              </li>
+            )}
             {site.contact.emails.map((e) => (
               <li key={e}>
-                <a href={`mailto:${e}`} className="hover:text-brand-dark">{e}</a>
+                <a href={`mailto:${e}`} className="transition-colors hover:text-white">{e}</a>
               </li>
             ))}
-            {site.contact.phones.map((p) => (
+            {site.contact.phones.filter((p) => p.replace(/\D/g, "") !== whatsapp).map((p) => (
               <li key={p}>
-                <a href={`tel:+${p.replace(/^\+/, "")}`} className="hover:text-brand-dark" dir="ltr">+{p.replace(/^\+/, "")}</a>
+                <a href={`tel:+${p.replace(/^\+/, "")}`} className="transition-colors hover:text-white" dir="ltr">+{p.replace(/^\+/, "")}</a>
               </li>
             ))}
           </ul>
@@ -30,10 +39,10 @@ export default function Footer({ lang, site }: { lang: Locale; site: SiteSetting
             {site.social.map((s) => (
               <a
                 key={s.href}
-                href={s.href}
+                href={fixWhatsappLinks(s.href, whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-brand/40 px-3.5 py-1.5 text-xs text-brand-dark transition-colors hover:bg-brand hover:text-white"
+                className="rounded-full border border-white/30 px-3.5 py-1.5 text-xs text-white transition-colors hover:bg-white hover:text-footer"
               >
                 {t.social[s.network] ?? s.network}
               </a>
@@ -43,11 +52,11 @@ export default function Footer({ lang, site }: { lang: Locale; site: SiteSetting
 
         {site.footerMenus.map((menu) => (
           <div key={menu.title.en}>
-            <h3 className="text-lg font-bold">{pick(menu.title, lang)}</h3>
+            <h3 className="text-lg font-bold text-white">{pick(menu.title, lang)}</h3>
             <ul className="mt-4 space-y-2.5">
               {menu.items.map((item) => (
                 <li key={item.href}>
-                  <Link href={localizeHref(lang, item.href)} className="text-muted transition-colors hover:text-brand-dark">
+                  <Link href={localizeHref(lang, item.href)} className="transition-colors hover:text-white">
                     {pick(item.label, lang)}
                   </Link>
                 </li>
@@ -56,9 +65,9 @@ export default function Footer({ lang, site }: { lang: Locale; site: SiteSetting
           </div>
         ))}
       </div>
-      <div className="border-t border-brand/15 py-6 text-center text-sm text-muted">
+      <div className="border-t border-white/15 py-6 text-center text-sm">
         {t.footer.rights(year, site.name)}
-        <SbcCredit lang={lang} className="mt-2" />
+        <SbcCredit lang={lang} className="mt-2" inverted />
       </div>
     </footer>
   );

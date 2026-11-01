@@ -18,14 +18,14 @@ export type CheckoutInput = {
   notes?: string;
 };
 
-type OrderContext = { appUrl: string; lang: Locale; displayCurrency?: string };
+type OrderContext = { appUrl: string; lang: Locale; displayCurrency?: string; customerId?: number | null };
 
 /**
  * Creates an order from the cart (prices are taken from the database, never from the browser)
  * and returns where to send the customer next: Paymob checkout, or the confirmation page when
  * online payment is not configured.
  */
-export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCurrency }: OrderContext) {
+export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCurrency, customerId = null }: OrderContext) {
   const quantities = new Map<string, number>();
   for (const i of input.items) {
     const q = Math.floor(Number(i.quantity));
@@ -37,15 +37,22 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
   const available = rows.filter((p) => p.published && p.inStock);
   if (available.length !== quantities.size) throw new CheckoutError("unavailable");
 
+  // workshops unlock in the buyer's account, so they can only be bought while signed in
+  if (!customerId && available.some((p) => p.kind === "workshop")) throw new CheckoutError("loginRequired");
+
   const site = await getSite();
-  const lines = available.map((p) => ({
-    productId: p.id,
-    slug: p.slug,
-    name: p.name,
-    unitPrice: p.price,
-    quantity: p.digital ? 1 : quantities.get(p.slug)!,
-    digital: p.digital,
-  }));
+  const lines = available.map((p) => {
+    const digital = p.digital || p.kind === "workshop";
+    return {
+      productId: p.id,
+      slug: p.slug,
+      name: p.name,
+      unitPrice: p.price,
+      unitCost: p.unitCost,
+      quantity: digital ? 1 : quantities.get(p.slug)!,
+      digital,
+    };
+  });
   const needsShipping = lines.some((l) => !l.digital);
   if (needsShipping && !(input.address && input.city && input.country)) {
     throw new CheckoutError("address");
@@ -75,6 +82,7 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
         displayCurrency: shown,
         displayRate,
         locale: lang,
+        customerId,
         subtotal,
         shipping,
         total,
@@ -108,7 +116,7 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
 
 /** `message` is a key of the "errors" dictionary section, translated for the customer. */
 export class CheckoutError extends Error {
-  constructor(public code: "empty" | "unavailable" | "address") {
+  constructor(public code: "empty" | "unavailable" | "address" | "loginRequired") {
     super(code);
   }
 }

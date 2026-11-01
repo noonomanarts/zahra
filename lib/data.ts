@@ -4,6 +4,7 @@ import { asc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { SiteSettings } from "@/db/schema";
 import { normalizeBlock, normalizeMenu, toL } from "./blocks";
+import { EMBEDDED_PAGES } from "./catalog";
 import { pick, type Locale } from "./i18n/config";
 import type { Page, Product, Term } from "./types";
 
@@ -79,6 +80,9 @@ function localizeProduct(p: RawProduct, lang: Locale): Product {
     related: p.related,
     categories: p.categories,
     tags: p.tags,
+    kind: p.kind,
+    createdAt: p.createdAt,
+    workshop: p.kind === "workshop" ? { videos: p.workshopVideos.length, files: p.workshopFiles.length } : null,
   };
 }
 
@@ -95,6 +99,29 @@ export async function listProducts(lang: Locale) {
     .filter((p) => p.published)
     .map((p) => localizeProduct(p, lang))
     .sort((a, b) => a.name.localeCompare(b.name, lang));
+}
+
+/** Physical and digital products (workshops have their own page). */
+export async function listShopProducts(lang: Locale) {
+  return (await listProducts(lang)).filter((p) => p.kind === "product");
+}
+
+/** The newest products that can be bought right now – sold-out products are left out. */
+export async function newArrivals(lang: Locale, limit = 6) {
+  const { products } = await loadCatalogue();
+  return products
+    .filter((p) => p.published && p.inStock)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id)
+    .slice(0, Math.min(Math.max(Math.round(limit) || 6, 1), 12))
+    .map((p) => localizeProduct(p, lang));
+}
+
+export async function listWorkshops(lang: Locale) {
+  const { products } = await loadCatalogue();
+  return products
+    .filter((p) => p.published && p.kind === "workshop")
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id)
+    .map((p) => localizeProduct(p, lang));
 }
 
 export async function getProduct(slug: string, lang: Locale) {
@@ -123,8 +150,11 @@ export async function getTag(slug: string, lang: Locale) {
   return (await listTags(lang)).find((t) => t.slug === slug);
 }
 
+/** Products of a category; available products first, sold-out ones at the end. */
 export async function productsInCategory(slug: string, lang: Locale) {
-  return (await listProducts(lang)).filter((p) => p.categories.includes(slug));
+  return (await listProducts(lang))
+    .filter((p) => p.categories.includes(slug))
+    .sort((a, b) => Number(b.inStock) - Number(a.inStock));
 }
 
 export async function productsWithTag(slug: string, lang: Locale) {
@@ -158,7 +188,7 @@ export async function getPage(slug: string, lang: Locale): Promise<Page | undefi
 
 export async function listPageSlugs() {
   const rows = await db.select({ slug: schema.pages.slug }).from(schema.pages);
-  return rows.map((r) => r.slug).filter((s) => s !== "home");
+  return rows.map((r) => r.slug).filter((s) => s !== "home" && !EMBEDDED_PAGES[s]);
 }
 
 // ---------- admin (raw bilingual rows, including unpublished products and empty terms) ----------

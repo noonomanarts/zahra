@@ -33,6 +33,12 @@
   --color-heading: #242424;
   --color-muted: #6b6b6b;
   --color-line: #ece6e3;
+  /* WhatsApp green, darkened so white text passes WCAG AA */
+  /* footer: a deep tone of the brand rose so the white logo stands out (light text passes WCAG AA) */
+  --color-footer: #7d5148;
+  --color-footer-text: #e9d6d1;
+  --color-whatsapp: #107c41;
+  --color-whatsapp-dark: #0d6b38;
   /* Latin brand fonts first; Arabic glyphs fall back to IBM Plex Sans Arabic / Aref Ruqaa */
   --font-sans: "Myriad Pro", var(--font-plex-arabic, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
   --font-display: "VIP Hakm", var(--font-plex-arabic, "Myriad Pro"), "Myriad Pro", ui-serif, serif;

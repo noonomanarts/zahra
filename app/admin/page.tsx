@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   await requireAdmin();
   const { lang, t } = await getAdminT();
   const PAID = ["paid", "processing", "shipped", "completed"] as const;
-  const [[products], [orders], [awaiting], [revenue], [noArabic], recent, currency] = await Promise.all([
+  const [[products], [orders], [awaiting], [revenue], [noArabic], recent, currency, [requests]] = await Promise.all([
     db.select({ n: count() }).from(schema.products),
     db.select({ n: count() }).from(schema.orders),
     db.select({ n: count() }).from(schema.orders).where(eq(schema.orders.status, "paid")),
@@ -20,6 +20,7 @@ export default async function DashboardPage() {
     db.select({ n: count() }).from(schema.products).where(eq(schema.products.nameAr, "")),
     db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt)).limit(8),
     getCurrencySettings(),
+    db.select({ n: count() }).from(schema.serviceRequests).where(eq(schema.serviceRequests.status, "new")),
   ]);
 
   const stats = [
@@ -34,6 +35,12 @@ export default async function DashboardPage() {
     <>
       <PageTitle title={t.nav.dashboard} />
       {!paymobEnabled() && <p className={notice}>{t.dashboard.paymentOff}</p>}
+      {requests.n > 0 && (
+        <div className={notice}>
+          {t.dashboard.newRequests(requests.n)}
+          <Link href="/admin/requests?status=new" className={btnSecondaryCls}>{t.dashboard.openRequests}</Link>
+        </div>
+      )}
       {currency.pending && (
         <div className={notice}>
           {t.dashboard.ratesPending}

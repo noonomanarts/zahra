@@ -18,6 +18,12 @@ export type AuthState = { error?: AuthError; name?: string; email?: string };
 
 const dummyPasswordHash = hashPassword("customer-auth-dummy-verification");
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Only same-site storefront paths, e.g. /en/checkout – never another host. */
+export async function safeNext(lang: Locale, value: string | null | undefined) {
+  const next = String(value ?? "");
+  return /^\/(en|ar)\/[\w\-/]*$/.test(next) && next.length < 200 ? next : `/${isLocale(lang) ? lang : DEFAULT_LOCALE}/account`;
+}
+
 const field = (formData: FormData, key: string) => {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
@@ -43,7 +49,7 @@ export async function loginCustomer(lang: Locale, _prev: AuthState, formData: Fo
     return { ...state, error: "unavailable" };
   }
 
-  redirect(`/${isLocale(lang) ? lang : DEFAULT_LOCALE}/account`);
+  redirect(await safeNext(lang, field(formData, "next")));
 }
 
 export async function registerCustomer(lang: Locale, _prev: AuthState, formData: FormData): Promise<AuthState> {
@@ -73,7 +79,7 @@ export async function registerCustomer(lang: Locale, _prev: AuthState, formData:
     return { ...state, error: "unavailable" };
   }
 
-  redirect(`/${isLocale(lang) ? lang : DEFAULT_LOCALE}/account`);
+  redirect(await safeNext(lang, field(formData, "next")));
 }
 
 export async function logoutCustomer(lang: Locale): Promise<never> {

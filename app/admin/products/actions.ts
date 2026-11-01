@@ -7,10 +7,13 @@ import { requireAdmin } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { revalidateSite } from "@/lib/revalidate";
-import { saveImage } from "@/lib/uploads";
+import { UploadError, deletePrivateFile, savePrivateFile, saveImage } from "@/lib/uploads";
+import { youtubeId } from "@/lib/workshops";
+import type { WorkshopFile, WorkshopVideo } from "@/lib/types";
+import type { ProductKind } from "@/db/schema";
 import { readL } from "@/components/admin/ui";
 
-export type ProductFormState = { error?: string; ok?: string };
+export type ProductFormState = { error?: string; ok?: string; workshopFiles?: WorkshopFile[] };
 
 const num = (v: FormDataEntryValue | null) => {
   const s = String(v ?? "").trim();
@@ -47,7 +50,41 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { error: err instanceof Error ? err.message : e.upload };
   }
 
+  const kind: ProductKind = formData.get("kind") === "workshop" ? "workshop" : "product";
+  const unitCost = num(formData.get("unitCost"));
+  if (unitCost !== null && (Number.isNaN(unitCost) || unitCost < 0)) return { error: e.price };
+
+  // workshop content: videos (YouTube links) and private downloadable files
+  let workshopVideos: WorkshopVideo[] = [];
+  let workshopFiles: WorkshopFile[] = [];
+  const previous = id ? await db.query.products.findFirst({ where: eq(schema.products.id, id) }) : undefined;
+  const removedFiles: WorkshopFile[] = [];
+  try {
+    workshopVideos = (JSON.parse(String(formData.get("workshopVideos") ?? "[]")) as WorkshopVideo[])
+      .map((v) => ({ title: { en: String(v.title?.en ?? "").trim(), ar: String(v.title?.ar ?? "").trim() }, url: String(v.url ?? "").trim() }))
+      .filter((v) => v.url || v.title.en || v.title.ar);
+    const kept = new Set((JSON.parse(String(formData.get("workshopFiles") ?? "[]")) as WorkshopFile[]).map((f) => f.id));
+    workshopFiles = (previous?.workshopFiles ?? []).filter((f) => kept.has(f.id));
+    removedFiles.push(...(previous?.workshopFiles ?? []).filter((f) => !kept.has(f.id)));
+  } catch {
+    return { error: e.video };
+  }
+  if (workshopVideos.some((v) => !youtubeId(v.url))) return { error: e.video };
+  for (const file of formData.getAll("newWorkshopFiles")) {
+    if (!(file instanceof File) || file.size === 0) continue;
+    try {
+      const stored = await savePrivateFile(file, "workshops", { maxBytes: 25 * 1024 * 1024, types: [".pdf", ".zip", ".jpg", ".png", ".webp"] });
+      workshopFiles.push({ id: crypto.randomUUID().slice(0, 8), name: file.name.slice(0, 120), file: stored, size: file.size });
+    } catch (err) {
+      return { error: err instanceof UploadError ? e.file(file.name) : e.upload };
+    }
+  }
+
   const values = {
+    kind,
+    unitCost,
+    workshopVideos,
+    workshopFiles,
     name: name.en,
     nameAr: name.ar,
     slug,
@@ -56,7 +93,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     regularPrice,
     currency: "OMR",
     inStock: formData.get("inStock") === "on",
-    digital: formData.get("digital") === "on",
+    digital: kind === "workshop" || formData.get("digital") === "on",
     published: formData.get("published") === "on",
     description: description.en,
     descriptionAr: description.ar,
@@ -77,10 +114,11 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return pid;
   });
   if (!productId) return { error: e.notFound };
+  await Promise.all(removedFiles.map((f) => deletePrivateFile(f.file)));
 
   revalidateSite();
   if (!id) redirect(`/admin/products/${productId}?created=1`);
-  return { ok: t.products.saved };
+  return { ok: t.products.saved, workshopFiles };
 }
 
 export async function deleteProduct(formData: FormData) {
@@ -88,4 +126,24 @@ export async function deleteProduct(formData: FormData) {
   await db.delete(schema.products).where(eq(schema.products.id, Number(formData.get("id"))));
   revalidateSite();
   redirect("/admin/products");
+}
+
+/** Workshop access given by hand (paid in person, gift…). */
+export async function grantWorkshop(formData: FormData) {
+  await requireAdmin();
+  const productId = Number(formData.get("productId"));
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const customer = email ? await db.query.customers.findFirst({ where: eq(schema.customers.email, email) }) : undefined;
+  if (!customer) redirect(`/admin/products/${productId}?grant=missing#participants`);
+  await db.insert(schema.workshopGrants).values({ customerId: customer.id, productId }).onConflictDoNothing();
+  redirect(`/admin/products/${productId}?grant=ok#participants`);
+}
+
+export async function revokeWorkshop(formData: FormData) {
+  await requireAdmin();
+  const productId = Number(formData.get("productId"));
+  await db
+    .delete(schema.workshopGrants)
+    .where(and(eq(schema.workshopGrants.productId, productId), eq(schema.workshopGrants.customerId, Number(formData.get("customerId")))));
+  redirect(`/admin/products/${productId}#participants`);
 }

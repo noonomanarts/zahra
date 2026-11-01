@@ -12,10 +12,12 @@ const NEW_BLOCKS: Record<string, Block> = {
   heading: { type: "heading", level: 2, text: E },
   text: { type: "text", html: { en: "<p></p>", ar: "<p></p>" } },
   image: { type: "image", src: "", alt: E },
+  gallery: { type: "gallery", images: [] },
   button: { type: "button", text: E, href: "/" },
   accordion: { type: "accordion", items: [{ question: E, answer: E }] },
   video: { type: "video", url: "" },
   products: { type: "products", products: [] },
+  "new-arrivals": { type: "new-arrivals", limit: 6 },
 };
 
 const area = `${inputCls} pe-10 font-mono text-xs`;
@@ -115,9 +117,31 @@ function BlockFields({ block, index, set }: { block: Block; index: number; set: 
       );
     case "gallery":
       return (
-        <Field label={f.imageUrls}>
-          <textarea rows={4} dir="ltr" value={block.images.join("\n")} onChange={(e) => set({ ...block, images: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })} className={area} />
-        </Field>
+        <div className="space-y-4">
+          {block.images.length > 0 && (
+            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {block.images.map((src, i) => (
+                <li key={src + i} className="group relative overflow-hidden rounded-lg border border-zinc-200">
+                  <img src={src} alt="" className="aspect-square w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => set({ ...block, images: block.images.filter((_, j) => j !== i) })}
+                    className="absolute inset-x-1 bottom-1 rounded bg-white/95 py-0.5 text-xs text-red-700 opacity-0 shadow transition group-hover:opacity-100 focus:opacity-100"
+                  >
+                    {t.products.remove}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Field label={f.addImages} hint={f.addImagesHint}>
+            <input name={`upload-gallery-${index}`} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple className="block text-sm" />
+          </Field>
+          <details className="text-sm">
+            <summary className="cursor-pointer text-zinc-500">{f.imageUrls}</summary>
+            <textarea rows={4} dir="ltr" value={block.images.join("\n")} onChange={(e) => set({ ...block, images: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })} className={`${area} mt-2`} />
+          </details>
+        </div>
       );
     case "accordion":
       return (
@@ -186,6 +210,15 @@ function BlockFields({ block, index, set }: { block: Block; index: number; set: 
           <button type="button" onClick={() => set({ ...block, items: [...block.items, { text: E, name: E, image: null }] })} className={btnSecondaryCls}>
             {f.addTestimonial}
           </button>
+        </div>
+      );
+    case "new-arrivals":
+      return (
+        <div className="grid gap-3 sm:grid-cols-[1fr_140px] sm:items-end">
+          <p className="text-sm text-zinc-500">{f.newArrivals}</p>
+          <Field label={f.count}>
+            <input type="number" min={1} max={12} value={block.limit} onChange={(e) => set({ ...block, limit: Number(e.target.value) })} className={inputCls} />
+          </Field>
         </div>
       );
     case "contact-form":

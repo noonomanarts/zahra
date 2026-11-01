@@ -15,7 +15,7 @@ npm run dev               # http://localhost:3000  ·  admin: http://localhost:3
 ```
 
 Production: `npm run build && npm start` (run `npm run db:migrate` on deploy).
-The server needs a writable `storage/` folder (database + uploaded images) — back it up.
+The server needs a writable `storage/` folder (database, uploaded images, private workshop/request files) — back it up.
 
 ## Scripts
 
@@ -24,6 +24,8 @@ The server needs a writable `storage/` folder (database + uploaded images) — b
 | `npm run db:generate` | create a migration after changing `db/schema.ts` |
 | `npm run db:migrate` | apply migrations |
 | `npm run db:seed` | import `data/*.json` into the database (upserts by slug; creates the admin from `.env`) |
+| `npm run db:upgrade-content` | one-time, re-runnable content upgrade for the shop structure (see below) |
+| `npm run test:features` | WhatsApp links and shop-structure checks |
 | `npm run extract` | re-extract `data/*.json` from the static mirror in `theme/` |
 | `npm run test:auth` | test customer auth through production HTTP forms with a disposable database; run `npm run build` first |
 | `npm run test:pwa` | verify private-route and service-worker cache behavior |
@@ -34,7 +36,55 @@ The server needs a writable `storage/` folder (database + uploaded images) — b
 - **Products** – create/edit/delete, prices and sale prices, stock, digital/physical, image upload and ordering, categories, tags, publish/draft
 - **Categories / Tags** – add, rename, change slug, delete
 - **Pages** – edit the home page and static pages block by block (headings, text, images, buttons, FAQ, videos, product lists)
-- **Settings** – store name, logo, contact details, social links, shipping fee, menus, admin password
+- **Settings** – store name, logo, contact details, WhatsApp number, social links, shipping fee, menus,
+  Print My Design options (fabrics, hoop sizes, fees), admin password
+- **Requests** – Customized Pattern and Print My Design requests with their uploaded files, status and notes
+  (badge in the sidebar for new requests)
+- **Finance** – sales (paid orders), costs (product unit costs + recorded purchases), expenses and net profit per
+  period, last 12 months, best sellers, CSV export
+
+## Shop structure
+
+The main menu has four departments, defined in `lib/catalog.ts` (labels in English and Arabic):
+
+- **Cross Stitch** (`/cross-stitch`): Digital Patterns, Classic Kits, Finished Item Kits, Stitchable Items,
+  Free Cross Stitch Pattern (→ `/free-patterns`), Customized Pattern (request form)
+- **Hand Embroidery** (`/hand-embroidery`): Digital Patterns, Embroidery Kits, Print My Design (request form)
+- **Crochet** (`/crochet`): Digital Patterns, Crochet Kits
+- **Online Workshops** (`/workshops`)
+
+Each product section lists the products of its category (e.g. `cross-stitch-classic-kits`): tick the category in
+Admin → Products. Empty sections show a "coming soon" page with a WhatsApp button. The home page "What's New"
+block fills itself with the 6 newest in-stock products (Admin → Pages → Home, block "What's New").
+The Customized Pattern showcase images are the gallery of the `customized-pattern` page in Admin → Pages.
+
+## Online workshops
+
+A product of type **Online workshop** (Admin → Products) has YouTube videos (private/unlisted links) and
+downloadable files (stored in `storage/private`, never public). Workshops can only be bought while signed in;
+when the order is paid (Paymob, or status set to paid in the admin) the workshop appears in the customer's
+account under **Online Workshops** with the video player and downloads. Access can also be given by hand on the
+product page (Participants).
+
+## WhatsApp
+
+All WhatsApp links use `https://wa.me/<number>` built from Settings → WhatsApp number. The old
+`wa.me/message/…` short links stopped working when the WhatsApp Business QR code was reset; they are rewritten
+everywhere (content, footer, social links).
+
+## Updating an existing database
+
+After deploying this version, on a **tested copy first**, then production (see `deploy/README.md`):
+
+```bash
+npm run db:migrate           # adds workshops, requests, finance tables/columns (additive only)
+npm run db:upgrade-content   # categories, new menu, WhatsApp links, What's New, Arabic labels
+```
+
+`db:upgrade-content` only changes what is still in its old state and never overwrites Arabic texts or
+category assignments made in the admin; running it again does nothing.
+
+Access problems from Iraq: see `docs/iraq-access.md`.
 
 Sessions are stored in the database (`sessions` table); passwords are hashed with scrypt.
 
