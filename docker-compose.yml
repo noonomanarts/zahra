@@ -1,0 +1,46 @@
+name: zahra
+services:
+  web:
+    image: zahra:${ZAHRA_IMAGE_TAG:?Set a unique release tag}
+    build:
+      context: .
+      args:
+        APP_URL: https://${ZAHRA_DOMAIN:?Set the confirmed domain}
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: /root/zahra/shared/runtime.env
+        required: true
+    environment:
+      NODE_ENV: production
+      APP_URL: https://${ZAHRA_DOMAIN:?Set the confirmed domain}
+      DATABASE_URL: file:/app/storage/zahra.db
+      UPLOAD_DIR: /app/storage/uploads
+      VIRTUAL_HOST: ${ZAHRA_DOMAIN:?Set the confirmed domain}
+      VIRTUAL_PORT: "3000"
+      LETSENCRYPT_HOST: ${ZAHRA_TLS_HOST:-}
+    expose:
+      - "3000"
+    volumes:
+      - type: bind
+        source: ${ZAHRA_STORAGE_DIR:?Set the verified Zahra storage directory}
+        target: /app/storage
+        bind:
+          create_host_path: false
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    stop_grace_period: 30s
+networks:
+  proxy:
+    external: true
+    name: proxy

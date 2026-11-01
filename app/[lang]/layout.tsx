@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";

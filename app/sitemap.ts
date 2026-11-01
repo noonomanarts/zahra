@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { MetadataRoute } from "next";
 import { listCategories, listPageSlugs, listProducts, listTags } from "@/lib/data";
 import { LOCALES } from "@/lib/i18n/config";

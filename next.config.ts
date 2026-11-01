@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // The static mirror is only used by the extraction script.
   outputFileTracingExcludes: {
-    "/*": ["./theme/**/*"],
+    "/*": ["./theme/**/*", "./storage/**/*", "./.env*"],
   },
   images: {
     // every image is served from this site (public/ and storage/uploads) – no remote hosts

@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 
-export const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR ?? "storage/uploads");
+export const UPLOAD_DIR = path.resolve(/* turbopackIgnore: true */ process.env.UPLOAD_DIR ?? "storage/uploads");
 
 const TYPES: Record<string, string> = {
   "image/jpeg": ".jpg",

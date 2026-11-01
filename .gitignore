@@ -44,3 +44,15 @@ next-env.d.ts
 /storage
 !.env.example
 /.cache
+
+# deployment private configuration
+/deploy/runtime.env
+
+# Private deployment artifacts
+/deploy-source.tar.gz
+/.release-sha
+/private-migration/
+/backups/
+*.db
+*.db-*
+*.sqlite*
