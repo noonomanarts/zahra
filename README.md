@@ -57,6 +57,8 @@ Each product section lists the products of its category (e.g. `cross-stitch-clas
 Admin → Products. Empty sections show a "coming soon" page with a WhatsApp button. The home page "What's New"
 block fills itself with the 6 newest in-stock products (Admin → Pages → Home, block "What's New").
 The Customized Pattern showcase images are the gallery of the `customized-pattern` page in Admin → Pages.
+The free pattern PDFs are served from `public/downloads/free-patterns/`; a page button whose link ends in `.pdf`
+is shown as a download button.
 
 ## Online workshops
 

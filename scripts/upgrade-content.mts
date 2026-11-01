@@ -118,6 +118,16 @@ if (site) {
 
 // ---------- 4. page content ----------
 
+/**
+ * The free pattern buttons were imported as "/wp-content" (the PDF path was lost). They point, in page order,
+ * to the PDFs now served from public/downloads/free-patterns.
+ */
+const FREE_PDF = (name: string) => `/downloads/free-patterns/${name}-cross-stitch-pattern.pdf`;
+const FREE_PATTERN_FILES: Record<string, string[]> = {
+  "digital-patterns": [FREE_PDF("palestinian-flag")],
+  "free-patterns": [FREE_PDF("palestinian-flag"), FREE_PDF("palestinian-map"), FREE_PDF("from-the-river"), FREE_PDF("gaza")],
+};
+
 /** Replaces the hand-picked “Best Sellers” (or first product) section with the automatic one. */
 function upgradeHome(blocks: Block[]): Block[] {
   const whatsNew: Block[] = [
@@ -170,6 +180,16 @@ for (const page of pages) {
     );
     log("digital-patterns: the customized pattern form now links to its own page");
   }
+
+  const files = [...(FREE_PATTERN_FILES[page.slug] ?? [])];
+  let linked = 0;
+  for (const b of blocks) {
+    if (b.type === "button" && /^\/wp-content\/?$/.test(b.href) && files.length) {
+      b.href = files.shift()!;
+      linked++;
+    }
+  }
+  if (linked) log(`${page.slug}: ${linked} free pattern download${linked > 1 ? "s" : ""} linked`);
 
   if (page.slug === "home" && !blocks.some((b) => b.type === "new-arrivals")) {
     blocks = upgradeHome(blocks);
