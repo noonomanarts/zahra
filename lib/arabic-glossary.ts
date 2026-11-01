@@ -41,6 +41,12 @@ export const ARABIC_GLOSSARY: Record<string, string> = {
   "Email Address": "البريد الإلكتروني",
   WhatsApp: "واتساب",
   "Zahras Design Studio – Crafted with Love": "زهراء ستوديو – صُنع بحب",
+  "<p><strong>Chart Details:</strong></p>": "<p><strong>تفاصيل النموذج:</strong></p>",
+  "<p><strong>PDF File Includes:</strong></p>": "<p><strong>يتضمن ملف PDF:</strong></p>",
+  "<p>Palestinian Flag Cross Stitch Pattern</p>": "<p>نموذج كروس ستيتش علم فلسطين</p>",
+  "Palestinian Map Cross Stitch pattern": "نموذج كروس ستيتش خريطة فلسطين",
+  "From The River Cross Stitch Pattern": "نموذج كروس ستيتش «من النهر»",
+  "Gaza Cross Stitch Pattern": "نموذج كروس ستيتش غزة",
   "<p>We are a top company providing Arabic cross stitch patterns in an easy and distinctive manner. Additionally, we offer a variety of cross stitch kits suitable for both beginners and experts.</p>":
     "<p>نقدّم نماذج كروس ستيتش عربية بأسلوب سهل ومميز، إلى جانب تشكيلة من أطقم الكروس ستيتش المناسبة للمبتدئين والمحترفين.</p>",
   "<p>At Zahra’s Design Studio, we focus on designing, experimenting and assembling to create unique kits.</p>":

@@ -19,7 +19,7 @@ export function pick(text: L | string | null | undefined, lang: Locale): string 
 /** True when the text for `lang` falls back to English (shown with dir="ltr"). */
 export const isFallback = (text: L, lang: Locale) => lang === "ar" && !text.ar?.trim() && !!text.en?.trim();
 
-const UNLOCALIZED = /^\/(admin|api|uploads|images|fonts|_next)(\/|$)/;
+const UNLOCALIZED = /^\/(admin|api|uploads|images|fonts|downloads|_next)(\/|$)/;
 
 /** Prefixes internal links with the language: "/shop" → "/ar/shop". External links are untouched. */
 export function localizeHref(lang: Locale, href: string) {
