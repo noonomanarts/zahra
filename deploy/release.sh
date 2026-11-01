@@ -14,6 +14,12 @@ test -d "$shared/storage/uploads"
 test -f "$shared/runtime.env"
 test -f "$shared/deployment.env"
 python3 "$release/deploy/check_schema.py" "$shared/storage/zahra.db" "$release/db/migrations"
+# Re-running an already healthy release must not interrupt active admin sessions.
+if test -L "$base/current" && test "$(cat "$base/current/.release-sha")" = "$sha" &&
+   test "$(docker inspect zahra-web-1 --format '{{.Config.Image}} {{.State.Health.Status}}' 2>/dev/null || true)" = "zahra:$sha healthy"; then
+  echo 'This Zahra release is already healthy; no restart or data changes needed.'
+  exit 0
+fi
 docker network inspect proxy >/dev/null
 export ZAHRA_IMAGE_TAG=$sha
 compose() { docker compose --env-file "$shared/deployment.env" -f "$release/docker-compose.yml" "$@"; }

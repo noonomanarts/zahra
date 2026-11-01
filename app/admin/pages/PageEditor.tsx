@@ -1,16 +1,17 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- admin previews */
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useAdminI18n } from "@/components/admin/AdminI18n";
 import { Card, Field, FormMessage, LField, LangTag, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import MarkdownEditor from "@/components/admin/MarkdownEditor";
 import type { Block, L } from "@/lib/types";
 import { savePage, type PageFormState } from "./actions";
 
 const E: L = { en: "", ar: "" };
 const NEW_BLOCKS: Record<string, Block> = {
   heading: { type: "heading", level: 2, text: E },
-  text: { type: "text", html: { en: "<p></p>", ar: "<p></p>" } },
+  text: { type: "text", html: E },
   image: { type: "image", src: "", alt: E },
   gallery: { type: "gallery", images: [] },
   button: { type: "button", text: E, href: "/" },
@@ -33,9 +34,10 @@ function LInput({ label, value, onChange, multiline, rows = 3, mono }: { label?:
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange({ ...value, [lang]: e.target.value }),
       className: mono || multiline ? area : `${inputCls} pe-10`,
     } as const;
+    if (multiline) return <MarkdownEditor label={`${label ?? "Content"} (${lang})`} value={value[lang]} onChange={next => onChange({ ...value, [lang]: next })} lang={lang} rows={rows} />;
     return (
       <div className="relative">
-        {multiline ? <textarea rows={rows} {...props} /> : <input {...props} />}
+        <input {...props} />
         <LangTag lang={lang} />
       </div>
     );
@@ -233,12 +235,12 @@ export default function PageEditor({ page }: { page: EditablePage }) {
   const p = t.pages;
   const [state, action, pending] = useActionState<PageFormState, FormData>(savePage, {});
   const [blocks, setBlocks] = useState<Block[]>(page.blocks);
+  const submitted = useRef<string | null>(null);
   const [toAdd, setToAdd] = useState("text");
 
   // uploaded images come back with their new URLs
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync with the saved result from the server
-    if (state.blocks) setBlocks(state.blocks);
+    if (state.blocks) setBlocks(current => JSON.stringify(current) === submitted.current ? state.blocks! : current);
   }, [state.blocks]);
 
   const update = (i: number, b: Block) => setBlocks((list) => list.map((x, j) => (j === i ? b : x)));
@@ -250,7 +252,7 @@ export default function PageEditor({ page }: { page: EditablePage }) {
     });
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} onSubmit={event => { submitted.current = String(new FormData(event.currentTarget).get("blocks")); }} className="space-y-6">
       <input type="hidden" name="slug" value={page.slug} />
       <input type="hidden" name="blocks" value={JSON.stringify(blocks)} />
 

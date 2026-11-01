@@ -5,7 +5,7 @@ import { getAdmin } from "@/lib/auth";
 import { dirOf } from "@/lib/i18n/config";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import AdminI18nProvider from "@/components/admin/AdminI18n";
-import SiteDocument, { SbcCredit } from "@/app/SiteDocument";
+import SiteDocument from "@/app/SiteDocument";
 import AdminNav from "./AdminNav";
 import { logout, setAdminLanguage } from "./actions";
 import { arefRuqaa, plexArabic } from "../fonts";
@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     : [{ n: 0 }];
 
   return (
-    <SiteDocument lang={lang} dir={dirOf(lang)} className={`h-full antialiased ${plexArabic.variable} ${arefRuqaa.variable}`}>
+    <SiteDocument showCredit={false} lang={lang} dir={dirOf(lang)} className={`h-full antialiased ${plexArabic.variable} ${arefRuqaa.variable}`}>
       <body className="min-h-full bg-zinc-50 font-sans text-zinc-900">
         <AdminI18nProvider lang={lang}>
           {!admin ? (
@@ -56,9 +56,6 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             </div>
           )}
         </AdminI18nProvider>
-        <footer className="px-4 py-4 text-center">
-          <SbcCredit lang={lang} />
-        </footer>
       </body>
     </SiteDocument>
   );

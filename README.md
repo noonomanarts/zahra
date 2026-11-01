@@ -165,3 +165,21 @@ lib/               data access, auth, orders, Paymob, uploads
 scripts/           extract (from theme/), migrate, seed
 theme/             original static mirror used as the extraction source
 ```
+
+## Admin Markdown editing
+
+Page body blocks (including hero text, FAQ answers, infoboxes and testimonials), product descriptions,
+and internal request notes use a GitHub-style CodeMirror editor with Write/Preview, GFM tables/tasks,
+formatting tools, keyboard shortcuts and undo/redo. English and Arabic fields retain their own direction.
+URL/email/phone lists and identifiers stay plain inputs. Images can be inserted by existing URL;
+the editor does not introduce an upload endpoint or external editing service.
+
+Existing HTML stays byte-for-byte in storage until that field is edited. The editing view converts it
+to Markdown; edited values carry an explicit format marker. The public renderer and preview share the
+same sanitizer, reject unsafe URL schemes/embeds and display Markdown raw HTML as text. No database
+migration or content upgrade is needed for this release. Do not run seed or content upgrade to deploy it.
+The admin layout/login no longer show SBC credits; the public footer is unchanged.
+
+A repeated deployment of an already healthy commit is a no-op. Deploying a different commit still
+uses a short stop/backup/start window for consistent SQLite storage backups, so requests can briefly
+receive 503 during that window. Wait for Actions success before editing production content.

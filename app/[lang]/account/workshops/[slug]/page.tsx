@@ -1,3 +1,4 @@
+import { renderRichContent } from "@/lib/rich-content";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,7 +8,7 @@ import { accountDate } from "@/components/account/OrderList";
 import WorkshopPlayer from "@/components/account/WorkshopPlayer";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { isLocale, localizeHref, localizeHtml, pick } from "@/lib/i18n/config";
+import { isLocale, localizeHref, pick } from "@/lib/i18n/config";
 import { customerWorkshop, youtubeId } from "@/lib/workshops";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -44,7 +45,7 @@ export default async function AccountWorkshopPage({ params }: PageProps<"/[lang]
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_340px]">
         {workshop.description ? (
-          <div className="prose-zahra min-w-0" dangerouslySetInnerHTML={{ __html: localizeHtml(workshop.description, lang) }} />
+          <div className="prose-zahra markdown-content min-w-0" dangerouslySetInnerHTML={{ __html: renderRichContent(workshop.description, lang) }} />
         ) : (
           <div />
         )}

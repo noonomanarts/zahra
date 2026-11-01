@@ -1,4 +1,5 @@
 import Link from "next/link";
+import MarkdownEditor from "./MarkdownEditor";
 import type { L } from "@/lib/types";
 
 export const inputCls =
@@ -65,9 +66,10 @@ export function LField({
       required: required && lang === "en",
       className: cls,
     } as const;
+    if (multiline) return <MarkdownEditor label={`${label} (${lang})`} name={`${name}_${lang}`} defaultValue={value?.[lang] ?? ""} lang={lang} rows={rows} />;
     return (
       <div className="relative">
-        {multiline ? <textarea rows={rows} {...props} /> : <input {...props} />}
+        <input {...props} />
         <LangTag lang={lang} />
       </div>
     );

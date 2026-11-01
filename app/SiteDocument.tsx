@@ -3,10 +3,10 @@ import type { Locale } from "@/lib/i18n/config";
 
 const SITE_DOMAIN = "zahrasdesignstudio.com";
 
-type SiteDocumentProps = ComponentProps<"html"> & { siteName?: string };
+type SiteDocumentProps = ComponentProps<"html"> & { siteName?: string; showCredit?: boolean };
 
 /** Shared App Router document for the storefront, admin and standalone 404. */
-export default function SiteDocument({ children, siteName = "Zahras Design Studio", ...props }: SiteDocumentProps) {
+export default function SiteDocument({ children, siteName = "Zahras Design Studio", showCredit = true, ...props }: SiteDocumentProps) {
   const website = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -16,13 +16,13 @@ export default function SiteDocument({ children, siteName = "Zahras Design Studi
   };
 
   return (
-    <html {...props} data-sbc-site="zahras-design-studio">
+    <html {...props} data-sbc-site={showCredit ? "zahras-design-studio" : undefined}>
       <head>
-        <meta name="generator" content="SBC — sbc.om" />
-        <script
+        {showCredit && <meta name="generator" content="SBC — sbc.om" />}
+        {showCredit && <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(website).replace(/</g, "\\u003c") }}
-        />
+        />}
       </head>
       {children}
     </html>

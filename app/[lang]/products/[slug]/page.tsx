@@ -1,3 +1,4 @@
+import { renderRichContent } from "@/lib/rich-content";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,7 +11,7 @@ import { DEPARTMENTS, WORKSHOPS_PATH, sectionHref } from "@/lib/catalog";
 import { getCustomer } from "@/lib/customer-auth";
 import { getCategory, getProduct, getProducts, getTag, listProducts } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { isLocale, localizeHref, localizeHtml, pick, type Locale } from "@/lib/i18n/config";
+import { isLocale, localizeHref, pick, type Locale } from "@/lib/i18n/config";
 import type { Product } from "@/lib/types";
 import { ownsWorkshop } from "@/lib/workshops";
 
@@ -137,9 +138,9 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/product
             <section className="mt-10">
               <h2 className="text-2xl font-bold">{t.product.description}</h2>
               <div
-                className="prose-zahra mt-3"
+                className="prose-zahra markdown-content mt-3"
                 dir={descriptionIsEnglish ? "ltr" : undefined}
-                dangerouslySetInnerHTML={{ __html: localizeHtml(product.description, lang) }}
+                dangerouslySetInnerHTML={{ __html: renderRichContent(product.description, lang) }}
               />
             </section>
           )}

@@ -130,7 +130,7 @@ test("customer accounts through native production HTTP forms", { timeout: 120_00
     const page = await request(route, {}, cookies);
     assert.equal(page.status, 200, `Could not load form ${route}`);
     const $ = load(await page.text());
-    const form = $("form").filter((_, element) => $(element).find('input[name^="$ACTION_"]').length > 0).first();
+    const form = $("form").filter((_, element) => $(element).find('input[name^="$ACTION_"]').length > 0 && (!fields.slug || $(element).find('input[name="slug"]').length > 0)).first();
     assert.equal(form.length, 1, `No progressive-enhancement Server Action form on ${route}`);
     const body = new FormData();
     form.find('input[type="hidden"][name]').each((_, element) => {
@@ -298,6 +298,31 @@ test("customer accounts through native production HTTP forms", { timeout: 120_00
     assert.match(attachment.headers.get("content-security-policy") ?? "", /sandbox/);
     assert.match(attachment.headers.get("cache-control") ?? "", /private.*no-store/);
     assert.equal(attachment.headers.get("x-content-type-options"), "nosniff");
+    const legacyBlocks = JSON.stringify([{ type: "text", html: { en: "<p>Legacy <strong>content</strong></p>", ar: "<p>محتوى قديم</p>" } }]);
+    await database.execute({ sql: "INSERT INTO pages (slug,title,blocks) VALUES ('editor-fixture','Editor fixture',?)", args: [legacyBlocks] });
+    const editorPage = await request("/admin/pages/editor-fixture", {}, adminJar);
+    const editorHtml = await editorPage.text();
+    assert.equal(editorPage.status, 200);
+    assert(editorHtml.includes('data-markdown-editor='));
+    assert(!editorHtml.includes('sbc.om') && !editorHtml.includes('Designed &amp; built by'));
+    const formPage = load(editorHtml);
+    assert.equal(formPage('input[name="blocks"]').attr('value'), legacyBlocks, "Opening editor must preserve legacy storage bytes");
+    const markdownBlocks = JSON.stringify([{ type: "text", html: { en: '<!-- zahra:markdown -->\n## Saved heading\n\n**Saved text** [Shop](/shop)', ar: '<!-- zahra:markdown -->\n## عنوان محفوظ' } }]);
+    const saved = await submit("/admin/pages/editor-fixture", { slug: "editor-fixture", title_en: "Editor fixture", title_ar: "اختبار", blocks: markdownBlocks }, adminJar);
+    assert.equal(saved.status, 200);
+    const stored = await database.execute("SELECT blocks FROM pages WHERE slug='editor-fixture'");
+    assert.equal(stored.rows[0].blocks, markdownBlocks);
+    const reload = await request("/admin/pages/editor-fixture", {}, adminJar);
+    assert.equal(load(await reload.text())('input[name="blocks"]').attr('value'), markdownBlocks);
+    const publicPage = await request("/en/editor-fixture", {}, anonymous);
+    const publicHtml = await publicPage.text();
+    assert(publicHtml.includes('<h2>Saved heading</h2>') && publicHtml.includes('<strong>Saved text</strong>'));
+    assert(publicHtml.includes('sbc.om'), "Public credit must remain");
+    const arabic = await request("/ar/editor-fixture", {}, anonymous);
+    assert((await arabic.text()).includes('<h2>عنوان محفوظ</h2>'));
+    const loginHtml = await (await request("/admin/login", {}, anonymous)).text();
+    assert(!loginHtml.includes('sbc.om'), "Admin login must not carry the credit");
+
   });
 
   await step("expired and forged sessions are rejected and expired records are removed", async () => {

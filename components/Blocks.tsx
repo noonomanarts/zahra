@@ -174,7 +174,7 @@ function render(b: Group, key: number, { lang, products, fresh, email, whatsapp 
           {b.items.map((item, i) => (
             <figure key={i} className="flex flex-col rounded-3xl bg-brand-soft p-7">
               <span className="font-display text-5xl leading-none text-brand">“</span>
-              <blockquote className="mt-2 flex-1 leading-relaxed" dir={isFallback(item.text, lang) ? "ltr" : undefined}>{t(item.text)}</blockquote>
+              <blockquote className="mt-2 flex-1 leading-relaxed" dir={isFallback(item.text, lang) ? "ltr" : undefined}><RichText text={item.text} lang={lang} /></blockquote>
               <figcaption className="mt-5 flex items-center gap-3 font-semibold">
                 {item.image && <Image src={item.image} alt="" width={44} height={44} className="h-11 w-11 rounded-full object-cover" />}
                 {t(item.name)}
