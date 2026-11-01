@@ -20,7 +20,7 @@ Create private `/root/zahra/shared/deployment.env` containing:
 
 ```dotenv
 ZAHRA_STORAGE_DIR=/root/zahra/shared/storage
-ZAHRA_DOMAIN=zahra.noonomanart.com
+ZAHRA_DOMAIN=zahra.noonomanarts.com
 # Set to the confirmed domain only after DNS resolves to this server.
 ZAHRA_TLS_HOST=
 ```

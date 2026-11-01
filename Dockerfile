@@ -9,7 +9,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 # Only a disposable empty schema is used at build time. No production data or secrets.
 ENV DATABASE_URL=file:/tmp/zahra-build.db
-ARG APP_URL=https://zahra.noonomanart.com
+ARG APP_URL=https://zahra.noonomanarts.com
 ENV APP_URL=$APP_URL
 RUN npm run db:migrate && npm run build
 
