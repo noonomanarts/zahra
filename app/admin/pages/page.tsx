@@ -18,7 +18,7 @@ export default async function PagesPage() {
   return (
     <>
       <PageTitle title={t.pages.title} />
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
         <ul className="divide-y divide-zinc-100">
           {sorted.map((p) => {
             const path = p.slug === "home" ? "" : `/${p.slug}`;

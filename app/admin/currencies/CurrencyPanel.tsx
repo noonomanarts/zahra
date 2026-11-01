@@ -53,9 +53,9 @@ export default function CurrencyPanel({ settings, sourceUrl }: { settings: Curre
       </Card>
 
       <form action={saveAction}>
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
           <table className="w-full text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-xs tracking-wide text-zinc-500 uppercase">
+            <thead className="border-b border-zinc-100 bg-zinc-50/70 text-xs font-medium tracking-wide text-zinc-500 uppercase rtl:tracking-normal">
               <tr>
                 <th className="px-4 py-3 text-start">{c.code}</th>
                 <th className="px-4 py-3 text-start">{c.live}</th>

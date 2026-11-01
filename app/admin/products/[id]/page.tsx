@@ -7,6 +7,8 @@ import { getAdminT } from "@/lib/i18n/admin-server";
 import { pick } from "@/lib/i18n/config";
 import { Card, PageTitle, btnCls, btnDangerCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
 import { workshopParticipants } from "@/lib/workshops";
+import { ConfirmAction } from "@/components/admin/motion";
+import { Icon } from "@/components/admin/icons";
 import ProductForm from "../ProductForm";
 import { deleteProduct, grantWorkshop, revokeWorkshop } from "../actions";
 
@@ -37,10 +39,18 @@ export default async function EditProductPage({ params, searchParams }: PageProp
                 <Link href={`/ar/products/${product.slug}`} target="_blank" className={btnSecondaryCls}>AR ↗</Link>
               </>
             )}
-            <form action={deleteProduct}>
+            <form id="delete-product" action={deleteProduct}>
               <input type="hidden" name="id" value={product.id} />
-              <button className={btnDangerCls}>{t.common.delete}</button>
             </form>
+            <ConfirmAction
+              form="delete-product"
+              className={btnDangerCls}
+              trigger={<><Icon name="trash" size={16} /> {t.common.delete}</>}
+              title={p.deleteTitle}
+              description={p.deleteText(pick({ en: product.name, ar: product.nameAr }, lang))}
+              confirm={p.deleteConfirm}
+              cancel={t.common.cancel}
+            />
           </>
         }
       />

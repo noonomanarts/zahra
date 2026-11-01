@@ -41,9 +41,9 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
         <button className={btnCls}>{t.common.filter}</button>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
         <table className="w-full text-sm">
-          <thead className="border-b border-zinc-200 bg-zinc-50 text-xs tracking-wide text-zinc-500 uppercase">
+          <thead className="border-b border-zinc-100 bg-zinc-50/70 text-xs font-medium tracking-wide text-zinc-500 uppercase rtl:tracking-normal">
             <tr>
               <th className="px-4 py-3 text-start">{p.product}</th>
               <th className="px-4 py-3 text-start">{p.sku}</th>
@@ -54,7 +54,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {list.map((x) => (
-              <tr key={x.id} className="hover:bg-zinc-50">
+              <tr key={x.id} className="transition-colors hover:bg-zinc-50/80">
                 <td className="px-4 py-2.5">
                   <Link href={`/admin/products/${x.id}`} className="flex items-center gap-3 hover:underline">
                     {x.images[0] ? <img src={x.images[0]} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" /> : <span className="h-10 w-10 shrink-0 rounded-md bg-zinc-100" />}

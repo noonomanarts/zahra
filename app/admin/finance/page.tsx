@@ -4,8 +4,10 @@ import { requireAdmin } from "@/lib/auth";
 import { formatMoney } from "@/lib/currency";
 import { FINANCE_CATEGORIES, PERIODS, financeReport, muscatDay, periodRange, type Period } from "@/lib/finance";
 import { getAdminT } from "@/lib/i18n/admin-server";
-import { Card, PageTitle, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { Card, Notice, PageTitle, Stat, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { Icon } from "@/components/admin/icons";
 import EntryForm from "./EntryForm";
+import { Count, SlidingTabs } from "@/components/admin/motion";
 import { deleteEntry } from "./actions";
 
 export const metadata: Metadata = { title: "Finance" };
@@ -27,25 +29,22 @@ export default async function FinancePage({ searchParams }: PageProps<"/admin/fi
   const peak = Math.max(1, ...monthly.flatMap((m) => [m.revenue, m.costs + m.expenses]));
 
   const kpis = [
-    { label: f.revenue, value: totals.revenue, hint: f.revenueHint(totals.orders), tone: "text-zinc-900" },
-    { label: f.costs, value: totals.costs, hint: f.costsHint, tone: "text-zinc-900" },
-    { label: f.expenses, value: totals.expenses, hint: f.expensesHint, tone: "text-zinc-900" },
-    { label: f.profit, value: totals.profit, hint: margin ? f.margin(margin) : "—", tone: totals.profit < 0 ? "text-red-700" : "text-emerald-700" },
+    { label: f.revenue, value: totals.revenue, hint: f.revenueHint(totals.orders), tone: "sky" as const, icon: "wallet" as const },
+    { label: f.costs, value: totals.costs, hint: f.costsHint, tone: "amber" as const, icon: "box" as const },
+    { label: f.expenses, value: totals.expenses, hint: f.expensesHint, tone: "rose" as const, icon: "currencies" as const },
+    { label: f.profit, value: totals.profit, hint: margin ? f.margin(margin) : "—", tone: "emerald" as const, icon: "finance" as const },
   ];
 
   return (
     <>
-      <PageTitle title={f.title} actions={<a href={`/admin/finance/export?${query}`} className={btnSecondaryCls}>{f.exportCsv}</a>} />
-      <p className="-mt-3 mb-5 max-w-3xl text-sm text-zinc-500">{f.intro}</p>
+      <PageTitle title={f.title} description={f.intro} actions={<a href={`/admin/finance/export?${query}`} className={btnSecondaryCls}>{f.exportCsv}</a>} />
 
       <form className="mb-6 flex flex-wrap items-end gap-2">
-        <nav className="flex flex-wrap gap-1 text-sm" aria-label={f.period}>
-          {PERIODS.filter((p) => p !== "custom").map((p) => (
-            <Link key={p} href={`/admin/finance?p=${p}`} className={`rounded-lg px-3 py-1.5 ${period === p ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"}`}>
-              {f.periods[p]}
-            </Link>
-          ))}
-        </nav>
+        <SlidingTabs
+          ariaLabel={f.period}
+          value={period}
+          items={PERIODS.filter((p) => p !== "custom").map((p) => ({ value: p, label: f.periods[p], href: `/admin/finance?p=${p}` }))}
+        />
         <input type="hidden" name="p" value="custom" />
         <label className="ms-auto text-xs text-zinc-500">{f.from}<input name="from" type="date" dir="ltr" defaultValue={report.range.from > "2000-01-01" ? report.range.from : ""} className={`${inputCls} mt-1`} /></label>
         <label className="text-xs text-zinc-500">{f.to}<input name="to" type="date" dir="ltr" defaultValue={report.range.to} className={`${inputCls} mt-1`} /></label>
@@ -54,19 +53,21 @@ export default async function FinancePage({ searchParams }: PageProps<"/admin/fi
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-zinc-200 bg-white p-5">
-            <p className="text-sm text-zinc-500">{k.label}</p>
-            <p className={`mt-2 text-2xl font-semibold ${k.tone}`}>{money(k.value)}</p>
-            <p className="mt-1 text-xs text-zinc-500">{k.hint}</p>
-          </div>
+          <Stat
+            key={k.label}
+            label={k.label}
+            hint={k.hint}
+            tone={k.tone}
+            icon={<Icon name={k.icon} />}
+            value={<span className={k.value < 0 ? "text-red-700" : ""}><Count value={k.value} decimals={3} prefix={lang === "ar" ? undefined : "OMR "} suffix={lang === "ar" ? " ر.ع." : undefined} /></span>}
+          />
         ))}
       </div>
 
       {report.missingCosts > 0 && (
-        <p className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {f.missingCost(report.missingCosts)}
-          <Link href="/admin/products" className={btnSecondaryCls}>{f.setCosts}</Link>
-        </p>
+        <div className="mt-4">
+          <Notice action={<Link href="/admin/products" className={btnSecondaryCls}>{f.setCosts}</Link>}>{f.missingCost(report.missingCosts)}</Notice>
+        </div>
       )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">

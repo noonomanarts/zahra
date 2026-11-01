@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { ORDER_STATUSES, type OrderStatus } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { formatMoney } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { Badge, PageTitle } from "@/components/admin/ui";
+import { SlidingTabs } from "@/components/admin/motion";
 
 export const metadata: Metadata = { title: "Orders" };
 
@@ -21,26 +22,28 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     .from(schema.orders)
     .where(filter ? eq(schema.orders.status, filter) : undefined)
     .orderBy(desc(schema.orders.createdAt));
+  const counts = new Map(
+    (await db.select({ status: schema.orders.status, n: count() }).from(schema.orders).groupBy(schema.orders.status)).map((r) => [r.status, r.n]),
+  );
   const dateFmt = new Intl.DateTimeFormat(lang === "ar" ? "ar-OM-u-nu-latn" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Muscat" });
 
   return (
     <>
       <PageTitle title={o.title} />
-      <nav className="mb-4 flex flex-wrap gap-1 text-sm">
-        {[null, ...ORDER_STATUSES].map((s) => (
-          <Link
-            key={s ?? "all"}
-            href={s ? `/admin/orders?status=${s}` : "/admin/orders"}
-            className={`rounded-lg px-3 py-1.5 ${filter === s ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"}`}
-          >
-            {s ? t.status[s] : o.all}
-          </Link>
-        ))}
-      </nav>
+      <div className="mb-4">
+        <SlidingTabs
+          ariaLabel={o.status}
+          value={filter ?? "all"}
+          items={[
+            { value: "all", label: o.all, href: "/admin/orders" },
+            ...ORDER_STATUSES.map((s) => ({ value: s, label: t.status[s], href: `/admin/orders?status=${s}`, count: counts.get(s) })),
+          ]}
+        />
+      </div>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
         <table className="w-full text-sm">
-          <thead className="border-b border-zinc-200 bg-zinc-50 text-xs tracking-wide text-zinc-500 uppercase">
+          <thead className="border-b border-zinc-100 bg-zinc-50/70 text-xs font-medium tracking-wide text-zinc-500 uppercase rtl:tracking-normal">
             <tr>
               <th className="px-4 py-3 text-start">{o.order}</th>
               <th className="px-4 py-3 text-start">{o.date}</th>
@@ -51,7 +54,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {orders.map((row) => (
-              <tr key={row.id} className="hover:bg-zinc-50">
+              <tr key={row.id} className="transition-colors hover:bg-zinc-50/80">
                 <td className="px-4 py-2.5"><Link href={`/admin/orders/${row.id}`} className="font-medium hover:underline" dir="ltr">{row.number}</Link></td>
                 <td className="px-4 py-2.5 text-zinc-500">{dateFmt.format(row.createdAt)}</td>
                 <td className="px-4 py-2.5">{row.customerName}<span className="block text-xs text-zinc-500" dir="ltr">{row.email}</span></td>

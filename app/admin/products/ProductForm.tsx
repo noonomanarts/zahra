@@ -4,6 +4,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useAdminI18n } from "@/components/admin/AdminI18n";
 import { Card, Field, FormMessage, LField, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { CheckItem, ToggleField } from "@/components/admin/motion";
 import { pick } from "@/lib/i18n/config";
 import type { AdminProduct, AdminTerm } from "@/lib/data";
 import type { WorkshopVideo } from "@/lib/types";
@@ -198,12 +199,10 @@ export default function ProductForm({ product, categories, tags, notice }: Props
             </div>
             <p className="mt-1.5 text-xs text-zinc-500">{kind === "workshop" ? p.kindHint : p.kindProduct}</p>
           </fieldset>
-          <div className="space-y-3 text-sm">
-            <label className="flex items-center gap-2"><input type="checkbox" name="published" defaultChecked={product?.published ?? true} /> {p.published}</label>
-            <label className="flex items-center gap-2"><input type="checkbox" name="inStock" defaultChecked={product?.inStock ?? true} /> {p.inStock}</label>
-            {kind === "product" && (
-              <label className="flex items-center gap-2"><input type="checkbox" name="digital" defaultChecked={product?.digital ?? false} /> {p.digital}</label>
-            )}
+          <div className="space-y-4 border-t border-zinc-100 pt-4">
+            <ToggleField name="published" label={p.published} defaultChecked={product?.published ?? true} />
+            <ToggleField name="inStock" label={p.inStock} defaultChecked={product?.inStock ?? true} />
+            {kind === "product" && <ToggleField name="digital" label={p.digital} defaultChecked={product?.digital ?? false} />}
           </div>
           <div className="mt-5 space-y-3">
             <FormMessage state={state} />
@@ -212,21 +211,17 @@ export default function ProductForm({ product, categories, tags, notice }: Props
         </Card>
 
         <Card title={t.nav.categories}>
-          <div className="max-h-64 space-y-2 overflow-y-auto text-sm">
+          <div className="-mx-2 max-h-72 overflow-y-auto">
             {categories.map((c) => (
-              <label key={c.id} className="flex items-center gap-2">
-                <input type="checkbox" name="categories" value={c.id} defaultChecked={product?.categories.includes(c.slug)} /> {termName(c)}
-              </label>
+              <CheckItem key={c.id} name="categories" value={c.id} label={termName(c)} defaultChecked={product?.categories.includes(c.slug)} />
             ))}
           </div>
         </Card>
 
         <Card title={t.nav.tags}>
-          <div className="max-h-64 space-y-2 overflow-y-auto text-sm">
+          <div className="-mx-2 max-h-72 overflow-y-auto">
             {tags.map((tag) => (
-              <label key={tag.id} className="flex items-center gap-2">
-                <input type="checkbox" name="tags" value={tag.id} defaultChecked={product?.tags.includes(tag.slug)} /> {termName(tag)}
-              </label>
+              <CheckItem key={tag.id} name="tags" value={tag.id} label={termName(tag)} defaultChecked={product?.tags.includes(tag.slug)} />
             ))}
           </div>
         </Card>

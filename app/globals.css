@@ -28,6 +28,7 @@
   --color-brand: #c0887b;
   --color-brand-dark: #a46e62;
   --color-brand-soft: #f6ece9;
+  --color-brand-ink: #8a5a4f; /* brand text on brand-soft (WCAG AA) */
   --color-header: #e2c2b8; /* header background of the original theme */
   --color-ink: #1e1e1e;
   --color-heading: #242424;
