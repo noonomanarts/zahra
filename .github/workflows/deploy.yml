@@ -38,33 +38,13 @@ jobs:
           if forbidden:
               raise SystemExit('Refusing publication package: private file paths are tracked')
           PY
+          python3 tests/deployment-ssh.test.py
           git archive --format=tar.gz --output=deploy-source.tar.gz HEAD
-      - name: Transfer source archive
-        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          fingerprint: ${{ secrets.SSH_HOST_FINGERPRINT }}
-          source: deploy-source.tar.gz
-          target: /root/zahra/incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Build and deploy isolated Zahra release
-        uses: appleboy/ssh-action@2ead5e36573f08b82fbfce1504f1a4b05a647c6f
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          fingerprint: ${{ secrets.SSH_HOST_FINGERPRINT }}
-          command_timeout: 35m
-          script: |
-            set -eu
-            umask 077
-            base=/root/zahra
-            release="$base/releases/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}"
-            test -s "$base/shared/storage/zahra.db"
-            mkdir "$release"
-            tar -xzf "$base/incoming/${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}/deploy-source.tar.gz" -C "$release"
-            cd "$release"
-            bash deploy/release.sh '${{ github.sha }}'
+      - name: Deploy over verified ED25519 SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST_FINGERPRINT: ${{ secrets.SSH_HOST_FINGERPRINT }}
+        run: bash deploy/ci-ssh.sh

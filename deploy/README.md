@@ -35,11 +35,15 @@ and rerun the deployment to enable the existing ACME companion.
 The main-branch workflow and manual dispatch use existing repository Secrets:
 `SSH_HOST`, `SSH_USER`, `SSH_PORT` (defaults to 22), `SSH_PRIVATE_KEY`, and
 `SSH_HOST_FINGERPRINT`. No passphrase is required for the configured identity.
-These names are references only; never commit their values.
+These names are references only; never commit their values. The fingerprint must be
+the server ED25519 host-key fingerprint, as a single `SHA256:...` value. The workflow
+explicitly selects ED25519, validates the key before authentication, and normalizes
+CRLF line endings. Private key material stays in a temporary runner directory and is
+removed on exit; it is never printed.
 
 The workflow rejects tracked private files, archives tracked source only, transfers
 it over host-verified SSH, and builds on the server. Each run gets a new release
-directory and an image tagged with the commit SHA. Action versions are pinned.
+directory and an image tagged with the commit SHA. The checkout action is pinned; SSH uses the runner's native OpenSSH client.
 Shared data and runtime secrets are never part of the source archive or Docker image.
 The image build migrates only a disposable empty schema. Production schema migrations
 must be separately reviewed and tested on a disposable backup before application.
