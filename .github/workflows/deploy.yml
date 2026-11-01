@@ -39,6 +39,7 @@ jobs:
               raise SystemExit('Refusing publication package: private file paths are tracked')
           PY
           python3 tests/deployment-ssh.test.py
+          python3 tests/schema-gate.test.py
           git archive --format=tar.gz --output=deploy-source.tar.gz HEAD
       - name: Deploy over verified ED25519 SSH
         env:

@@ -74,7 +74,7 @@ everywhere (content, footer, social links).
 
 ## Updating an existing database
 
-After deploying this version, on a **tested copy first**, then production (see `deploy/README.md`):
+Before starting this version, rehearse on a **private copy of the current server database first**, then use the explicit maintenance procedure in `deploy/README.md`:
 
 ```bash
 npm run db:migrate           # adds workshops, requests, finance tables/columns (additive only)

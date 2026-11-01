@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -93,6 +93,8 @@ test("customer accounts through native production HTTP forms", { timeout: 120_00
       NEXT_TELEMETRY_DISABLED: "1",
       DATABASE_URL: `file:${path.join(scratch, "test.db")}`,
       APP_URL: base,
+      UPLOAD_DIR: path.join(scratch, "uploads"),
+      PRIVATE_DIR: path.join(scratch, "private"),
       ADMIN_EMAIL: "",
       ADMIN_PASSWORD: "",
     },
@@ -241,6 +243,61 @@ test("customer accounts through native production HTTP forms", { timeout: 120_00
     expectRedirect(await submit("/en/login", { email: ` ${email.toUpperCase()} `, password }), "/en/account");
     assert.notEqual(jar.values.get(cookieName), firstToken);
     assert.deepEqual(await (await request("/api/customer")).json(), { customer: { name, email } });
+  });
+
+  await step("workshop downloads require paid ownership and request files stay administrator-only", async () => {
+    // Synthetic records only: this test never connects to payments or production storage.
+    const owner = Number((await database.execute({ sql: "SELECT id FROM customers WHERE email = ?", args: [email] })).rows[0].id);
+    await mkdir(path.join(scratch, "private"), { recursive: true });
+    await writeFile(path.join(scratch, "private/lesson.pdf"), "private fixture lesson");
+    const files = JSON.stringify([{ id: "lesson", name: "lesson.pdf", file: "lesson.pdf", size: 22 }]);
+    const product = await database.execute({ sql: "INSERT INTO products (slug,name,kind,digital,workshop_files) VALUES ('test-workshop','Test workshop','workshop',1,?) RETURNING id", args: [files] });
+    const pid = Number(product.rows[0].id);
+    const route = `/api/workshops/${pid}/files/lesson`;
+    const anonymous = new CookieJar();
+    assert.equal((await request(route, {}, anonymous)).status, 403);
+    assert.equal((await request(route)).status, 403);
+    const order = await database.execute({ sql: "INSERT INTO orders (number,customer_name,email,phone,currency,subtotal,total,customer_id) VALUES ('TEST-1','Fixture',?,'0000000','OMR',1,1,?) RETURNING id", args: [email, owner] });
+    const oid = Number(order.rows[0].id);
+    await database.execute({ sql: "INSERT INTO order_items (order_id,product_id,slug,name,unit_price,quantity) VALUES (?,?,'test-workshop','Fixture',1,1)", args: [oid, pid] });
+    assert.equal((await request(route)).status, 403, "Pending payment must not unlock content");
+    await database.execute({ sql: "UPDATE orders SET status='paid', customer_id=NULL WHERE id=?", args: [oid] });
+    assert.equal((await request(route)).status, 403, "Matching email is not ownership");
+    await database.execute({ sql: "UPDATE orders SET customer_id=? WHERE id=?", args: [owner, oid] });
+    const allowed = await request(route);
+    assert.equal(allowed.status, 200);
+    assert.equal(await allowed.text(), "private fixture lesson");
+    assert.match(allowed.headers.get("cache-control") ?? "", /private.*no-store/);
+    assert.match(allowed.headers.get("content-disposition") ?? "", /^attachment;/);
+    assert.equal((await request(route, {}, anonymous)).status, 403);
+    await database.execute({ sql: "UPDATE orders SET status='cancelled' WHERE id=?", args: [oid] });
+    assert.equal((await request(route)).status, 403, "Revoked payment must remove access");
+    await database.execute({ sql: "INSERT INTO workshop_grants (customer_id,product_id) VALUES (?,?)", args: [owner, pid] });
+    assert.equal((await request(route)).status, 200);
+    await database.execute({ sql: "DELETE FROM workshop_grants WHERE customer_id=? AND product_id=?", args: [owner, pid] });
+    assert.equal((await request(route)).status, 403);
+    assert.equal((await request("/uploads/lesson.pdf")).status, 404);
+    assert.equal((await request("/uploads/private/lesson.pdf")).status, 404);
+    assert.equal((await request("/private/lesson.pdf")).status, 404);
+    const req = await database.execute({ sql: "INSERT INTO service_requests (number,type,name,email,phone,files,customer_id) VALUES ('CP-TEST','custom-pattern','Fixture',?,'0000000',?,?) RETURNING id", args: [email, files, owner] });
+    const requestRoute = `/admin/requests/${req.rows[0].id}/files/0`;
+    expectRedirect(await request(requestRoute), "/admin/login");
+    expectRedirect(await request(requestRoute, {}, anonymous), "/admin/login");
+    const impostor = new CookieJar();
+    impostor.values.set(cookieName, jar.values.get(cookieName)!);
+    impostor.values.set("zds_admin", "invalid-admin-token");
+    assert.equal((await request(requestRoute, {}, impostor)).status, 403);
+    assert.equal((await request("/admin/finance/export", {}, impostor)).status, 403);
+    const adminToken = randomBytes(32).toString("base64url");
+    const admin = await database.execute("INSERT INTO admin_users (email,name,password_hash) VALUES ('fixture@example.test','Fixture','not-a-password') RETURNING id");
+    await database.execute({ sql: "INSERT INTO sessions (id,user_id,expires_at) VALUES (?,?,?)", args: [hashToken(adminToken), Number(admin.rows[0].id), Math.floor(Date.now()/1000)+3600] });
+    const adminJar = new CookieJar();
+    adminJar.values.set("zds_admin", adminToken);
+    const attachment = await request(requestRoute, {}, adminJar);
+    assert.equal(attachment.status, 200);
+    assert.match(attachment.headers.get("content-security-policy") ?? "", /sandbox/);
+    assert.match(attachment.headers.get("cache-control") ?? "", /private.*no-store/);
+    assert.equal(attachment.headers.get("x-content-type-options"), "nosniff");
   });
 
   await step("expired and forged sessions are rejected and expired records are removed", async () => {

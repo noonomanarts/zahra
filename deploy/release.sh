@@ -13,6 +13,7 @@ test -s "$shared/storage/zahra.db"
 test -d "$shared/storage/uploads"
 test -f "$shared/runtime.env"
 test -f "$shared/deployment.env"
+python3 "$release/deploy/check_schema.py" "$shared/storage/zahra.db" "$release/db/migrations"
 docker network inspect proxy >/dev/null
 export ZAHRA_IMAGE_TAG=$sha
 compose() { docker compose --env-file "$shared/deployment.env" -f "$release/docker-compose.yml" "$@"; }

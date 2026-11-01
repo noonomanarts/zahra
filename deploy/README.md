@@ -78,3 +78,28 @@ confirm Noon's public endpoint and container baseline remain unchanged.
 For rollback, stop only Zahra and select the previous release/image. Do not overwrite
 current data; restore into a new directory only after reconciling writes since cutover.
 Never prune shared Docker resources or run `docker compose down -v`.
+
+### Reviewed workshops/requests/finance release (migration 0003)
+
+Ordinary `release.sh` now checks migration hashes and refuses to replace the running app
+if its schema does not match. It never migrates, seeds, restores, or uploads a local database.
+For this feature release, rehearse migration and content upgrade twice on a fresh private
+server snapshot, then run `bash deploy/upgrade_feature_release.sh <commit-sha> --reviewed-server-copy`
+from that commit's server release directory. This is an explicit maintenance command, not a CI step.
+It builds before downtime, locks deployment, stops Zahra only, creates a consistent verified
+backup of the whole storage tree, applies additive migrations and atomic content changes,
+checks protected rows and file hashes, and starts the new image. No payment test or fixture is used
+in production. The content upgrade intentionally changes navigation, old WhatsApp links,
+empty Arabic labels and the home product section, adds eight categories and a showcase page,
+and adds initial category links without removing existing assignments.
+
+On failure the previous app restarts against the preserved database (0003 is backward compatible).
+There is no automatic database rollback: it could lose orders received after startup. For a manual
+restore, first stop all Zahra writers, take another full verified snapshot, reconcile any newer
+business records, then restore the verified pre-upgrade storage under maintenance. Never copy a
+live SQLite database without its WAL or restore over a running app. Keep backups private.
+
+Owner setup remains: confirm fabrics/hoop sizes and fees, replace the showcase with actual work,
+repair legacy missing PDF links, review sold-out products, and configure email separately
+(SMTP delivery is not implemented by this release). Unlisted YouTube URLs are shareable;
+account entitlement protects the site's player and file downloads, not YouTube itself.

@@ -100,6 +100,7 @@ async function parsePrintDesign(formData: FormData): Promise<Answers> {
 
 /** Validates and stores a request with its attachments; returns the request number (CP-1001, PD-1001…). */
 export async function submitServiceRequest(type: RequestType, formData: FormData, lang: Locale, customerId: number | null) {
+  if (type !== "custom-pattern" && type !== "print-design") throw new RequestError("failed");
   if (text(formData, "website")) throw new RequestError("failed"); // honeypot, filled in by bots only
   const name = text(formData, "name", 100);
   const email = text(formData, "email", 254).toLowerCase();

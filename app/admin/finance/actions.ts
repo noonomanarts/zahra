@@ -18,7 +18,7 @@ export async function addEntry(_prev: EntryState, formData: FormData): Promise<E
   const category = String(formData.get("category"));
   const description = String(formData.get("description") ?? "").trim().slice(0, 200);
   const amount = Number(formData.get("amount"));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !ENTRY_KINDS.includes(kind) || !description || !(amount > 0)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !ENTRY_KINDS.includes(kind) || !description || (!Number.isFinite(amount) || !(amount > 0))) {
     return { error: t.finance.invalid };
   }
   await db.insert(schema.financeEntries).values({

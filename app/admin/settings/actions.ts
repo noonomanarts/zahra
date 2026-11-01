@@ -67,7 +67,7 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
   if (
     !hoopSizes.length ||
     hoopSizes.some((n) => !(n > 0 && n < 100)) ||
-    [printService.asIsFee, printService.editsFee].some((f) => f !== null && (Number.isNaN(f) || f < 0))
+    [printService.asIsFee, printService.editsFee].some((f) => f !== null && (!Number.isFinite(f) || f < 0))
   ) {
     return { error: t.settings.invalidPrint };
   }

@@ -2,13 +2,15 @@
 // section categories, new main menu, WhatsApp links, the automatic "What's New" home section and the
 // Customized Pattern showcase page. Run after `npm run db:migrate`: `npm run db:upgrade-content`.
 import { eq } from "drizzle-orm";
-import { db, schema } from "@/db";
+import { db as database, schema } from "@/db";
 import type { SiteSettings } from "@/db/schema";
 import { ARABIC_GLOSSARY } from "@/lib/arabic-glossary";
 import { normalizeBlock, normalizeMenu, toL } from "@/lib/blocks";
 import { DEFAULT_PRINT_SERVICE, DEPARTMENTS, SECTION_CATEGORIES, SERVICE_PATHS, WORKSHOPS_LABEL, WORKSHOPS_PATH, defaultMainMenu } from "@/lib/catalog";
 import type { Block, L, MenuItem } from "@/lib/types";
 
+// Apply all content changes atomically; a failure leaves the original content intact.
+await database.transaction(async (db) => {
 const log = (...args: unknown[]) => console.log("•", ...args);
 
 /** Fills an empty Arabic text from the glossary; returns true when something changed. */
@@ -93,7 +95,7 @@ if (site) {
   if (digits && !site.whatsapp) {
     site.whatsapp = digits;
     changed = true;
-    log("WhatsApp number set:", digits);
+    log("WhatsApp number derived from the configured contact");
   }
   if (digits && site.social?.some((s) => shortLink().test(s.href))) {
     site.social = site.social.map((s) => ({ ...s, href: s.href.replace(shortLink(), `https://wa.me/${digits}`) }));
@@ -206,4 +208,5 @@ if (!pages.some((p) => p.slug === "customized-pattern")) {
 }
 
 if (translated) log(`${translated} Arabic texts filled in (menus, titles, headings, buttons)`);
+});
 console.log("content is up to date");

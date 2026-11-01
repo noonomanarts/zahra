@@ -52,7 +52,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 
   const kind: ProductKind = formData.get("kind") === "workshop" ? "workshop" : "product";
   const unitCost = num(formData.get("unitCost"));
-  if (unitCost !== null && (Number.isNaN(unitCost) || unitCost < 0)) return { error: e.price };
+  if (unitCost !== null && (!Number.isFinite(unitCost) || unitCost < 0)) return { error: e.price };
 
   // workshop content: videos (YouTube links) and private downloadable files
   let workshopVideos: WorkshopVideo[] = [];
