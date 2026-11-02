@@ -28,6 +28,14 @@ const PATHS = {
   eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
   download: "M12 4v11m0 0 4-4m-4 4-4-4M5 20h14",
   chevron: "m9 6 6 6-6 6",
+  workshops: "M3 5h18v12H3V5Zm5 16h8M10 8.5v5l4.5-2.5L10 8.5Z",
+  video: "M4 6h11v12H4V6Zm11 4.5L20 7v10l-5-3.5",
+  users: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-6 9a6 6 0 0 1 12 0m1-16.5a4 4 0 0 1 0 7.5M21 20a6 6 0 0 0-4-5.6",
+  upload: "M12 16V4m0 0-4 4m4-4 4 4M5 20h14",
+  grip: "M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01",
+  file: "M7 3h7l5 5v13H7V3Zm7 0v5h5",
+  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+  refresh: "M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4m-4 5a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4",
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -9,7 +9,7 @@ import { useAdminI18n } from "./AdminI18n";
 import { Icon, type IconName } from "./icons";
 import { Tip } from "./motion";
 
-type NavKey = "dashboard" | "orders" | "requests" | "finance" | "products" | "categories" | "tags" | "pages" | "currencies" | "settings";
+type NavKey = "dashboard" | "orders" | "requests" | "finance" | "products" | "workshops" | "categories" | "tags" | "pages" | "currencies" | "settings";
 
 const GROUPS: { key: "overview" | "sales" | "catalogue" | "site"; items: { href: string; key: NavKey; icon: IconName }[] }[] = [
   { key: "overview", items: [{ href: "/admin", key: "dashboard", icon: "dashboard" }] },
@@ -25,6 +25,7 @@ const GROUPS: { key: "overview" | "sales" | "catalogue" | "site"; items: { href:
     key: "catalogue",
     items: [
       { href: "/admin/products", key: "products", icon: "products" },
+      { href: "/admin/workshops", key: "workshops", icon: "workshops" },
       { href: "/admin/categories", key: "categories", icon: "categories" },
       { href: "/admin/tags", key: "tags", icon: "tags" },
     ],

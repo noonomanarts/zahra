@@ -17,8 +17,10 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
   const { q = "", category = "", missing = "" } = (await searchParams) as { q?: string; category?: string; missing?: string };
   const { products, categories } = await adminCatalogue();
   const term = q.toLowerCase();
+  // workshops have their own section
   const list = products.filter(
     (x) =>
+      x.kind !== "workshop" &&
       (!term || x.name.toLowerCase().includes(term) || x.nameAr.includes(q) || x.sku?.toLowerCase().includes(term)) &&
       (!category || x.categories.includes(category)) &&
       (missing !== "ar" || !x.nameAr || !x.descriptionAr),
@@ -69,7 +71,6 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap gap-1">
                     <Badge status={x.published ? "published" : "draft"} label={t.status[x.published ? "published" : "draft"]} />
-                    {x.kind === "workshop" && <Badge status="processing" label={p.workshopBadge} />}
                     {!x.inStock && <Badge status="outOfStock" label={t.status.outOfStock} />}
                     {(!x.nameAr || !x.descriptionAr) && <Badge status="warning" label={t.common.missingArabic} />}
                   </div>

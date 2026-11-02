@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -7,13 +8,12 @@ import { requireAdmin } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { revalidateSite } from "@/lib/revalidate";
-import { UploadError, deletePrivateFile, savePrivateFile, saveImage } from "@/lib/uploads";
-import { youtubeId } from "@/lib/workshops";
-import type { WorkshopFile, WorkshopVideo } from "@/lib/types";
+import { saveImage } from "@/lib/uploads";
+import { nextSku } from "@/lib/sku";
 import type { ProductKind } from "@/db/schema";
 import { readL } from "@/components/admin/ui";
 
-export type ProductFormState = { error?: string; ok?: string; workshopFiles?: WorkshopFile[] };
+export type ProductFormState = { error?: string; ok?: string; sku?: string };
 
 const num = (v: FormDataEntryValue | null) => {
   const s = String(v ?? "").trim();
@@ -40,6 +40,17 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   });
   if (clash) return { error: e.slugTaken(slug) };
 
+  const kind: ProductKind = formData.get("kind") === "workshop" ? "workshop" : "product";
+  const digital = kind === "workshop" || formData.get("digital") === "on";
+  const previous = id ? await db.query.products.findFirst({ where: eq(schema.products.id, id), columns: { sku: true } }) : undefined;
+  // an automatic or empty SKU takes the next free number now, so two saves never get the same one
+  let sku = String(formData.get("sku") ?? "").trim().slice(0, 40);
+  if (formData.get("skuAuto") === "1" || !sku) sku = await nextSku(kind === "workshop" ? "workshop" : digital ? "digital" : "product");
+  else if (sku !== previous?.sku) {
+    const taken = await db.query.products.findFirst({ where: id ? and(eq(schema.products.sku, sku), ne(schema.products.id, id)) : eq(schema.products.sku, sku) });
+    if (taken) return { error: e.skuTaken(sku) };
+  }
+
   let images: string[];
   try {
     images = JSON.parse(String(formData.get("images") ?? "[]"));
@@ -50,50 +61,21 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { error: err instanceof Error ? err.message : e.upload };
   }
 
-  const kind: ProductKind = formData.get("kind") === "workshop" ? "workshop" : "product";
   const unitCost = num(formData.get("unitCost"));
   if (unitCost !== null && (!Number.isFinite(unitCost) || unitCost < 0)) return { error: e.price };
-
-  // workshop content: videos (YouTube links) and private downloadable files
-  let workshopVideos: WorkshopVideo[] = [];
-  let workshopFiles: WorkshopFile[] = [];
-  const previous = id ? await db.query.products.findFirst({ where: eq(schema.products.id, id) }) : undefined;
-  const removedFiles: WorkshopFile[] = [];
-  try {
-    workshopVideos = (JSON.parse(String(formData.get("workshopVideos") ?? "[]")) as WorkshopVideo[])
-      .map((v) => ({ title: { en: String(v.title?.en ?? "").trim(), ar: String(v.title?.ar ?? "").trim() }, url: String(v.url ?? "").trim() }))
-      .filter((v) => v.url || v.title.en || v.title.ar);
-    const kept = new Set((JSON.parse(String(formData.get("workshopFiles") ?? "[]")) as WorkshopFile[]).map((f) => f.id));
-    workshopFiles = (previous?.workshopFiles ?? []).filter((f) => kept.has(f.id));
-    removedFiles.push(...(previous?.workshopFiles ?? []).filter((f) => !kept.has(f.id)));
-  } catch {
-    return { error: e.video };
-  }
-  if (workshopVideos.some((v) => !youtubeId(v.url))) return { error: e.video };
-  for (const file of formData.getAll("newWorkshopFiles")) {
-    if (!(file instanceof File) || file.size === 0) continue;
-    try {
-      const stored = await savePrivateFile(file, "workshops", { maxBytes: 25 * 1024 * 1024, types: [".pdf", ".zip", ".jpg", ".png", ".webp"] });
-      workshopFiles.push({ id: crypto.randomUUID().slice(0, 8), name: file.name.slice(0, 120), file: stored, size: file.size });
-    } catch (err) {
-      return { error: err instanceof UploadError ? e.file(file.name) : e.upload };
-    }
-  }
 
   const values = {
     kind,
     unitCost,
-    workshopVideos,
-    workshopFiles,
     name: name.en,
     nameAr: name.ar,
     slug,
-    sku: String(formData.get("sku") ?? "").trim() || null,
+    sku,
     price,
     regularPrice,
     currency: "OMR",
     inStock: formData.get("inStock") === "on",
-    digital: kind === "workshop" || formData.get("digital") === "on",
+    digital,
     published: formData.get("published") === "on",
     description: description.en,
     descriptionAr: description.ar,
@@ -114,36 +96,17 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return pid;
   });
   if (!productId) return { error: e.notFound };
-  await Promise.all(removedFiles.map((f) => deletePrivateFile(f.file)));
 
   revalidateSite();
-  if (!id) redirect(`/admin/products/${productId}?created=1`);
-  return { ok: t.products.saved, workshopFiles };
+  if (kind === "workshop") revalidatePath("/admin/workshops", "layout");
+  // a new workshop continues with its lessons and files
+  if (!id) redirect(kind === "workshop" ? `/admin/workshops/${productId}?created=1` : `/admin/products/${productId}?created=1`);
+  return { ok: kind === "workshop" ? t.workshops.detailsSaved : t.products.saved, sku };
 }
 
 export async function deleteProduct(formData: FormData) {
   await requireAdmin();
-  await db.delete(schema.products).where(eq(schema.products.id, Number(formData.get("id"))));
+  const [removed] = await db.delete(schema.products).where(eq(schema.products.id, Number(formData.get("id")))).returning({ kind: schema.products.kind });
   revalidateSite();
-  redirect("/admin/products");
-}
-
-/** Workshop access given by hand (paid in person, gift…). */
-export async function grantWorkshop(formData: FormData) {
-  await requireAdmin();
-  const productId = Number(formData.get("productId"));
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const customer = email ? await db.query.customers.findFirst({ where: eq(schema.customers.email, email) }) : undefined;
-  if (!customer) redirect(`/admin/products/${productId}?grant=missing#participants`);
-  await db.insert(schema.workshopGrants).values({ customerId: customer.id, productId }).onConflictDoNothing();
-  redirect(`/admin/products/${productId}?grant=ok#participants`);
-}
-
-export async function revokeWorkshop(formData: FormData) {
-  await requireAdmin();
-  const productId = Number(formData.get("productId"));
-  await db
-    .delete(schema.workshopGrants)
-    .where(and(eq(schema.workshopGrants.productId, productId), eq(schema.workshopGrants.customerId, Number(formData.get("customerId")))));
-  redirect(`/admin/products/${productId}#participants`);
+  redirect(removed?.kind === "workshop" ? "/admin/workshops" : "/admin/products");
 }

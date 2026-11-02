@@ -68,7 +68,8 @@ export function LField({
     } as const;
     if (multiline) return <MarkdownEditor label={`${label} (${lang})`} name={`${name}_${lang}`} defaultValue={value?.[lang] ?? ""} lang={lang} rows={rows} />;
     return (
-      <div className="relative">
+      // the wrapper takes the field's direction, so the tag sits at the end of the text, never over it
+      <div className="relative" dir={props.dir}>
         <input {...props} />
         <LangTag lang={lang} />
       </div>
