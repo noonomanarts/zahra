@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Drawer } from "@animate-ui/react/primitives/radix-ui";
 import { Highlight, HighlightItem } from "@animate-ui/react/primitives/effects/highlight";
 import { useAdminI18n } from "./AdminI18n";
@@ -157,18 +157,24 @@ export default function AdminShell({
   const { lang, t } = useAdminI18n();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
   const all = GROUPS.flatMap((g) => g.items);
   const current = all.filter((i) => (i.href === "/admin" ? pathname === "/admin" : pathname.startsWith(i.href))).at(-1) ?? all[0];
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the mobile menu closes after navigating
   useEffect(() => setOpen(false), [pathname]);
 
+  // The desktop scroll container persists across routes; start each new page at its heading.
+  useEffect(() => {
+    if (!window.location.hash) mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[272px_1fr]">
-      <aside className="hidden border-e border-zinc-200/80 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
-        <div className="p-4 pb-2"><Brand name={name} /></div>
-        <div className="flex-1 overflow-y-auto px-3 py-4"><Nav active={current.href} newRequests={newRequests} /></div>
-        <div className="p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
+    <div className="min-h-screen lg:grid lg:h-dvh lg:min-h-0 lg:grid-cols-[272px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+      <aside className="hidden border-e border-zinc-200/80 bg-white lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden">
+        <div className="shrink-0 p-4 pb-2"><Brand name={name} /></div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} /></div>
+        <div className="shrink-0 p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
       </aside>
 
       {/* small screens: top bar + slide-in drawer */}
@@ -197,13 +203,13 @@ export default function AdminShell({
                 <Icon name="close" />
               </Drawer.Close>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-4"><Nav active={current.href} newRequests={newRequests} onNavigate={() => setOpen(false)} /></div>
-            <div className="p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} onNavigate={() => setOpen(false)} /></div>
+            <div className="shrink-0 p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
 
-      <main className="min-w-0 px-4 py-6 sm:px-8 sm:py-8 xl:px-10">
+      <main ref={mainRef} tabIndex={0} aria-label={t.nav[current.key]} className="min-w-0 px-4 py-6 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand sm:px-8 sm:py-8 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain xl:px-10">
         <div className="mx-auto max-w-[1400px]">{children}</div>
       </main>
     </div>
