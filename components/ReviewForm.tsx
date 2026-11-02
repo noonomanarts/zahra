@@ -1,13 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { submitReview, type ReviewState } from "@/app/[lang]/review-actions";
+import type { ReviewState } from "@/app/[lang]/review-actions";
 import { useI18n } from "@/components/providers/I18nProvider";
 
-export default function ReviewForm({ productId, own }: { productId: number; own: { rating: number; body: string } | null }) {
+export default function ReviewForm({ action: submit, own }: { action: (previous: ReviewState, formData: FormData) => Promise<ReviewState>; own: { rating: number; body: string } | null }) {
   const { t } = useI18n();
   const r = t.reviews;
-  const [state, action, pending] = useActionState<ReviewState, FormData>(submitReview.bind(null, productId), {});
+  const [state, action, pending] = useActionState<ReviewState, FormData>(submit, {});
   const [rating, setRating] = useState(own?.rating ?? 0);
   if (state.saved) return <p role="status" className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{r.thanks}</p>;
   return (

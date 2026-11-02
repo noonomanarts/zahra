@@ -114,6 +114,7 @@ test("orders, coupons, stock and both gateways", { timeout: 180_000 }, async (t)
   child.stderr?.on("data", (c) => { log = (log + c).slice(-8000); });
   t.after(async () => {
     if (child.exitCode === null) await new Promise<void>((resolve) => { child.once("exit", () => resolve()); child.kill("SIGTERM"); });
+    paymob.closeAllConnections();
     await new Promise((r) => paymob.close(r));
     db.close();
     await rm(scratch, { recursive: true, force: true });
@@ -129,7 +130,9 @@ test("orders, coupons, stock and both gateways", { timeout: 180_000 }, async (t)
   const request = async (route: string, jar: Jar, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (jar.values.size) headers.set("Cookie", jar.header());
-    const response = await fetch(`${base}${route}`, { ...init, headers, redirect: "manual", signal: AbortSignal.timeout(20_000) });
+    const response = await fetch(`${base}${route}`, { ...init, headers, redirect: "manual", signal: AbortSignal.timeout(20_000) }).catch((cause: unknown) => {
+      throw new Error(`${init.method ?? "GET"} ${route} failed:\n${log}`, { cause });
+    });
     jar.read(response);
     return response;
   };
@@ -188,6 +191,9 @@ test("orders, coupons, stock and both gateways", { timeout: 180_000 }, async (t)
     assert.equal(denied.status, 303);
     assert.equal(new URL(denied.headers.get("location")!, base).pathname, "/admin/forbidden");
     assert.equal((await request("/admin/payments", sales)).status, 307);
+
+    const saved = load(await (await request("/admin/payments", owner)).text());
+    assert.equal(saved('input[name="active"][checked]').attr("value"), "amwalpay", "the form shows the gateway that is really active");
 
     // saving again with the secret left empty keeps it
     await post(form, owner, { active: "amwalpay", amwal_environment: "uat", amwal_merchantId: "M77", amwal_terminalId: "T77", amwal_secretKey: "" });

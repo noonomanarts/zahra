@@ -87,7 +87,7 @@ export default async function CouponsPage({ searchParams }: PageProps<"/admin/co
         </div>
         {editable && (
           <Card title={editing ? c.editTitle(editing.code) : c.newTitle} actions={editing ? <Link href="/admin/coupons" className="text-sm text-zinc-500 hover:text-zinc-900">{t.common.cancel}</Link> : undefined}>
-            <CouponForm key={editing?.id ?? "new"} coupon={editing ?? undefined} />
+            <CouponForm key={editing ? `${editing.id}-${editing.type}` : "new"} coupon={editing ?? undefined} />
           </Card>
         )}
       </div>

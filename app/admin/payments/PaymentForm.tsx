@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { useAdminI18n } from "@/components/admin/AdminI18n";
 import { Icon } from "@/components/admin/icons";
 import { Card, Field, FormMessage, btnCls, inputCls } from "@/components/admin/ui";
@@ -26,7 +26,6 @@ export default function PaymentForm({ view }: { view: PaymentView }) {
   const { t } = useAdminI18n();
   const p = t.payments;
   const [state, action, pending] = useActionState<PaymentState, FormData>(savePayments, {});
-  const [active, setActive] = useState(view.active);
   const secretHint = (saved: boolean) => (saved ? p.secretSaved : p.secretMissing);
   const options = [
     { value: "paymob" as const, title: "Paymob", text: p.paymobInfo, ready: view.paymob.ready },
@@ -41,7 +40,8 @@ export default function PaymentForm({ view }: { view: PaymentView }) {
           <legend className="sr-only">{p.activeTitle}</legend>
           {options.map((o) => (
             <label key={o.value} className="relative block cursor-pointer">
-              <input type="radio" name="active" value={o.value} checked={active === o.value} onChange={() => setActive(o.value)} className="peer sr-only" />
+              {/* uncontrolled: a form resets to its defaults after saving, and the default must be what was saved */}
+              <input type="radio" name="active" value={o.value} defaultChecked={view.active === o.value} className="peer sr-only" />
               <span className="block h-full rounded-xl border border-zinc-200 bg-white p-4 transition peer-checked:border-zinc-900 peer-checked:ring-1 peer-checked:ring-zinc-900 peer-focus-visible:ring-2 peer-focus-visible:ring-brand hover:border-zinc-300">
                 <span className="block pe-6 text-sm font-semibold text-zinc-900">{o.title}</span>
                 <span className="mt-1 block text-xs leading-relaxed text-zinc-500">{o.text}</span>

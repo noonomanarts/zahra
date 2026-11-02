@@ -30,6 +30,7 @@ The server needs a writable `storage/` folder (database, uploaded images, privat
 | `npm run test:auth` | test customer auth through production HTTP forms with a disposable database; run `npm run build` first |
 | `npm run test:permissions` | access rules, and that every admin page, action and download checks a permission |
 | `npm run test:access` | test administrator access through production HTTP forms with a disposable database; run `npm run build` first |
+| `npm run test:commerce` | coupons, stock, reviews, payment keys and gateway signatures through a production server; run `npm run build` first |
 | `npm run test:pwa` | verify private-route and service-worker cache behavior |
 
 ## Admin panel (`/admin`)
@@ -38,6 +39,11 @@ The server needs a writable `storage/` folder (database, uploaded images, privat
 - **Products** – create/edit/delete, prices and sale prices, stock, digital/physical, image upload and ordering, categories, tags, publish/draft
 - **Categories / Tags** – add, rename, change slug, delete
 - **Pages** – edit the home page and static pages block by block (headings, text, images, buttons, FAQ, videos, product lists)
+- **Payments** – choose the active gateway (AmwalPay, Paymob or none) and enter its keys. Secrets are stored encrypted
+  (AES-256-GCM, key from `SETTINGS_SECRET` or a generated file in the private storage folder), never shown again and only
+  open to owners and administrators. `PAYMOB_*` variables keep working until keys are saved here.
+- **Coupons** – percentage or fixed codes with dates, minimum order, total uses and once-per-customer; products only, not shipping
+- **Reviews** – reviews from real buyers, published after approval
 - **Settings** – store name, logo, contact details, WhatsApp number, social links, shipping fee, menus,
   Print My Design options (fabrics, hoop sizes, fees)
 - **Customers** – registered accounts with orders, spend, workshops and requests; search, filters, CSV export;
@@ -141,11 +147,17 @@ Prices are stored and charged in **OMR**. Visitors can show prices in AED, SAR, 
 At checkout the customer sees the total in their currency and the OMR amount that will be charged;
 the order stores the display currency and rate.
 
+## Stock
+
+A physical product can have a number of pieces. It goes down when an order is placed and the product sells out at zero;
+failed and cancelled orders give their pieces back, and an online payment left unfinished for two hours stops holding them.
+Leave the number empty to use only the in-stock switch.
+
 ## Self-hosted
 
 Every image, font and script is served by this app: product images live in `public/images`, the Arabic fonts
 (IBM Plex Sans Arabic, Aref Ruqaa – OFL) in `app/fonts`, the brand fonts in `public/fonts`. External services are only
-contacted for what can't be local: Paymob (payments), Bank Muscat (exchange rates, admin only) and YouTube
+contacted for what can't be local: the active payment gateway (Paymob's page, or AmwalPay's SmartBox script on the payment page), Bank Muscat (exchange rates, admin only) and YouTube
 (the About video loads only after the visitor presses play).
 
 ## PWA

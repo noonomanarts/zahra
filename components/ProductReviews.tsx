@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { localizeHref, type Locale } from "@/lib/i18n/config";
+import { submitReview } from "@/app/[lang]/review-actions";
 import ReviewForm from "./ReviewForm";
 
 const STAR = "m12 4 2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8L12 4Z";
@@ -40,7 +41,7 @@ export default function ProductReviews({ lang, productId, data, signedIn, mayRev
         </div>
         <div className="space-y-3">
           {own?.status === "pending" && <p role="status" className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">{r.ownPending}</p>}
-          {mayReview ? <ReviewForm productId={productId} own={own} /> : !signedIn && <p className="text-sm text-muted"><Link href={localizeHref(lang, "/login")} className="underline underline-offset-4">{r.signInToReview}</Link></p>}
+          {mayReview ? <ReviewForm action={submitReview.bind(null, productId)} own={own} /> : !signedIn && <p className="text-sm text-muted"><Link href={localizeHref(lang, "/login")} className="underline underline-offset-4">{r.signInToReview}</Link></p>}
         </div>
       </div>
     </section>
