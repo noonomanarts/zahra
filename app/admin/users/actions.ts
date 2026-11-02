@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, count, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { latestNotificationId } from "@/lib/admin-notifications";
 import { audit } from "@/lib/audit";
 import { requireAdmin, revokeSessions } from "@/lib/auth";
 import { getAdminT } from "@/lib/i18n/admin-server";
@@ -69,7 +70,7 @@ export async function saveUser(_prev: UserFormState, formData: FormData): Promis
   if (!target) {
     const password = temporaryPassword();
     const [created] = await db.insert(schema.adminUsers)
-      .values({ name, email, role: access.role, permissions: access.custom, passwordHash: await hashPassword(password), mustChangePassword: true })
+      .values({ name, email, role: access.role, permissions: access.custom, passwordHash: await hashPassword(password), mustChangePassword: true, lastReadNotificationId: await latestNotificationId() })
       .onConflictDoNothing({ target: schema.adminUsers.email })
       .returning({ id: schema.adminUsers.id });
     if (!created) return { error: e.emailTaken };

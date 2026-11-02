@@ -2,7 +2,7 @@
  * Administrator access levels. Plain data and pure rules, shared by the server (which enforces them)
  * and the admin UI (which only hides what the server would refuse).
  */
-export const SECTIONS = ["orders", "requests", "finance", "customers", "products", "workshops", "taxonomy", "reviews", "coupons", "pages", "currencies", "payments", "settings", "users"] as const;
+export const SECTIONS = ["orders", "requests", "finance", "customers", "products", "workshops", "taxonomy", "reviews", "coupons", "pages", "currencies", "payments", "email", "settings", "users"] as const;
 export type Section = (typeof SECTIONS)[number];
 
 export const LEVELS = ["none", "view", "manage"] as const;

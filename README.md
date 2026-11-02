@@ -31,6 +31,7 @@ The server needs a writable `storage/` folder (database, uploaded images, privat
 | `npm run test:permissions` | access rules, and that every admin page, action and download checks a permission |
 | `npm run test:access` | test administrator access through production HTTP forms with a disposable database; run `npm run build` first |
 | `npm run test:commerce` | coupons, stock, reviews, payment keys and gateway signatures through a production server; run `npm run build` first |
+| `npm run test:email` | SMTP settings, order and password emails against a local mail server; run `npm run build` first |
 | `npm run test:pwa` | verify private-route and service-worker cache behavior |
 
 ## Admin panel (`/admin`)
@@ -42,6 +43,12 @@ The server needs a writable `storage/` folder (database, uploaded images, privat
 - **Payments** – choose the active gateway (AmwalPay, Paymob or none) and enter its keys. Secrets are stored encrypted
   (AES-256-GCM, key from `SETTINGS_SECRET` or a generated file in the private storage folder), never shown again and only
   open to owners and administrators. `PAYMOB_*` variables keep working until keys are saved here.
+- **Email** – SMTP server, sender and studio addresses (password stored encrypted, owners and administrators only), a test
+  button and a log of what was sent. Customers get order, request and password emails in their language; the studio gets
+  alerts. A mail problem never fails an order: sending happens in the background and failures appear in the log.
+- **Notifications** – the bell in the sidebar: new and paid orders, payment problems, requests, reviews, new customers, contact
+  messages, low stock and failed emails. It updates by itself with a toast, an optional sound and desktop alerts, follows each
+  person's role and keeps read state per person. Entries are kept for 90 days.
 - **Coupons** – percentage or fixed codes with dates, minimum order, total uses and once-per-customer; products only, not shipping
 - **Reviews** – reviews from real buyers, published after approval
 - **Settings** – store name, logo, contact details, WhatsApp number, social links, shipping fee, menus,
@@ -116,8 +123,8 @@ Sessions are stored in the database (`sessions` table); passwords are hashed wit
 
 The header links to localized login and registration pages (`/en/login`, `/en/register`, and Arabic equivalents).
 Customers can create an account, sign in, edit their details and password at `/en/account/profile`, and sign out.
-The site sends no email, so a forgotten password goes through the studio: `/en/forgot-password` opens WhatsApp, and
-Admin → Customers → **Create password link** makes a private one-hour, single-use link (only its hash is stored).
+A forgotten password gets a private one-hour, single-use link (only its hash is stored): by email from
+`/en/forgot-password` when Admin → Email is on, otherwise through WhatsApp and Admin → Customers → **Create password link**.
 Customer credentials, sessions and cookies are separate from admin access. Apply pending migrations with
 `npm run db:migrate` before using these pages. Existing guest checkout remains available.
 

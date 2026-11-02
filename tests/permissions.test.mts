@@ -73,14 +73,14 @@ const adminFiles = walk(path.join(root, "app/admin")).map((f) => path.relative(r
 const read = (f: string) => readFileSync(path.join(root, f), "utf8");
 
 test("every admin page names the permission it needs", () => {
-  const open = new Set(["app/admin/page.tsx", "app/admin/login/page.tsx", "app/admin/forbidden/page.tsx", "app/admin/account/page.tsx", "app/admin/search/page.tsx"]);
+  const open = new Set(["app/admin/page.tsx", "app/admin/login/page.tsx", "app/admin/forbidden/page.tsx", "app/admin/account/page.tsx", "app/admin/search/page.tsx", "app/admin/notifications/page.tsx"]);
   for (const file of adminFiles.filter((f) => f.endsWith("page.tsx") && !open.has(f))) {
     assert.match(read(file), /requireAdmin\("[a-z]+\.(view|manage)"\)/, file);
   }
 });
 
 test("every admin Server Action requires manage access", () => {
-  const open = new Set(["app/admin/actions.ts", "app/admin/account/actions.ts"]);
+  const open = new Set(["app/admin/actions.ts", "app/admin/account/actions.ts", "app/admin/notifications/actions.ts"]);
   for (const file of adminFiles.filter((f) => f.endsWith("actions.ts") && !open.has(f))) {
     const source = read(file);
     const actions = source.split(/^export async function /m).slice(1);

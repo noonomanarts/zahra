@@ -15,7 +15,7 @@ export default function RequestForm({ id, status, notes }: { id: number; status:
     <form action={action} className="space-y-4">
       <input type="hidden" name="id" value={id} />
       <Field label={r.status}>
-        <select name="status" defaultValue={status} className={inputCls}>
+        <select key={String(status)} name="status" defaultValue={status} className={inputCls}>
           {REQUEST_STATUSES.map((s) => <option key={s} value={s}>{r.statuses[s]}</option>)}
         </select>
       </Field>

@@ -184,7 +184,7 @@ function render(b: Group, key: number, { lang, products, fresh, email, whatsapp 
         </div>
       );
     case "contact-form":
-      return <div key={key} className="mt-8"><ContactForm email={email} /></div>;
+      return <div key={key} className="mt-8"><ContactForm /></div>;
   }
 }
 

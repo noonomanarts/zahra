@@ -9,6 +9,9 @@ import { releaseAbandonedOrders, syncStock } from "./stock";
 import { getCurrencySettings } from "./currency-server";
 import { isCurrency, type CurrencyCode } from "./currency";
 import type { Locale } from "./i18n/config";
+import { notifyAdmins } from "./admin-notifications";
+import { stockNotice } from "./notification-kinds";
+import { notifyOrder, notifyPaymentProblem } from "./notifications";
 import { activeGateway } from "./payments";
 import { createIntention, toMinorUnits, type PaymobTransaction } from "./paymob";
 
@@ -74,6 +77,7 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
 
   const counted = lines.filter((l) => !l.digital && available.find((p) => p.id === l.productId)?.stock !== null);
 
+  const stockNotices: { kind: "stock.low" | "stock.out"; id: number; name: string; left: number }[] = [];
   const order = await db.transaction(async (tx) => {
     // checked here, so two customers can't take the last use of a coupon or the last piece of a kit
     const applied = input.coupon ? await checkCoupon(tx, input.coupon, subtotal, input.email) : null;
@@ -85,8 +89,10 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
         .update(schema.products)
         .set({ stock: sql`${schema.products.stock} - ${line.quantity}` })
         .where(and(eq(schema.products.id, line.productId), isNotNull(schema.products.stock), gte(schema.products.stock, line.quantity)))
-        .returning({ id: schema.products.id });
+        .returning({ stock: schema.products.stock });
       if (!taken) throw new CheckoutError("outOfStock");
+      const notice = stockNotice(taken.stock! + line.quantity, taken.stock!);
+      if (notice) stockNotices.push({ kind: notice, id: line.productId, name: line.name, left: taken.stock! });
     }
     const free = total <= 0;
     const [created] = await tx
@@ -122,8 +128,12 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
   });
 
   const total = order.total;
+  for (const n of stockNotices) await notifyAdmins(n.kind, { name: n.name, left: String(n.left) }, `/admin/products/${n.id}`);
   const gateway = total > 0 ? await activeGateway() : null;
-  if (!gateway) return { orderNumber: order.number, redirectTo: `/${lang}/checkout/result?ref=${order.number}` };
+  if (!gateway) {
+    notifyOrder(order.id, total <= 0 ? "paid" : "received");
+    return { orderNumber: order.number, redirectTo: `/${lang}/checkout/result?ref=${order.number}` };
+  }
 
   if (gateway === "amwalpay") {
     // the reference is also the address of the payment page, so it can't be guessed from the order number
@@ -168,16 +178,24 @@ async function settle(order: Order, result: { success: boolean; pending: boolean
   if (result.success && !result.pending) {
     if (result.amountMinor !== toMinorUnits(order.total)) {
       console.error(`Payment amount mismatch for ${order.number}: got ${result.amountMinor}, expected ${toMinorUnits(order.total)}`);
+      notifyPaymentProblem("payment.mismatch", order);
       return order;
     }
     if (order.status === "pending" || order.status === "failed") {
       await syncStock(order, "paid");
-      await db.update(schema.orders).set({ status: "paid", paidAt: new Date(), ...result.ids }).where(eq(schema.orders.id, order.id));
+      // the browser's return and the gateway's notification can arrive together: only one of them moves the order
+      const [moved] = await db
+        .update(schema.orders)
+        .set({ status: "paid", paidAt: new Date(), ...result.ids })
+        .where(and(eq(schema.orders.id, order.id), inArray(schema.orders.status, ["pending", "failed"])))
+        .returning({ id: schema.orders.id });
+      if (moved) notifyOrder(order.id, "paid");
       return { ...order, status: "paid" as const };
     }
   } else if (!result.pending && order.status === "pending") {
     await syncStock(order, "failed");
     await db.update(schema.orders).set({ status: "failed", ...result.ids }).where(eq(schema.orders.id, order.id));
+    notifyPaymentProblem("payment.failed", order);
     return { ...order, status: "failed" as const };
   }
   return order;

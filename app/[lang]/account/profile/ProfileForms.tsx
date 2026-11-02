@@ -75,3 +75,16 @@ export function ResetForm({ token, action }: { token: string; action: Action }) 
     </form>
   );
 }
+
+export function ForgotForm({ action }: { action: Action }) {
+  const { t } = useI18n();
+  const [state, formAction, pending] = useActionState(action, {});
+  if (state.saved) return <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{t.auth.forgotSent}</p>;
+  return (
+    <form action={formAction} className="space-y-5">
+      <div><label htmlFor="forgot-email" className={label}>{t.auth.email}</label><input id="forgot-email" name="email" type="email" required maxLength={254} dir="ltr" autoComplete="email" className={`${input} rtl:text-right`} /></div>
+      <Message state={state} saved="" />
+      <button disabled={pending} className={`${submit} w-full`}>{pending ? t.account.saving : t.auth.forgotSend}</button>
+    </form>
+  );
+}

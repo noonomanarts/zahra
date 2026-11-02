@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { notifyAdmins } from "@/lib/admin-notifications";
 import {
   clearInvalidCustomerSession,
   consumeCustomerAuthAttempt,
@@ -77,6 +78,7 @@ export async function registerCustomer(lang: Locale, _prev: AuthState, formData:
       .returning({ id: schema.customers.id });
     if (!customer) return { ...state, error: "registrationFailed" };
     await createCustomerSession(customer.id);
+    await notifyAdmins("customer.new", { name, email }, `/admin/customers/${customer.id}`);
   } catch {
     return { ...state, error: "unavailable" };
   }

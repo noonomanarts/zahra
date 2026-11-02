@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { RequestType } from "@/db/schema";
 import { getCustomer } from "@/lib/customer-auth";
 import { isLocale } from "@/lib/i18n/config";
+import { notifyServiceRequest } from "@/lib/notifications";
 import { RequestError, submitServiceRequest, type RequestErrorCode } from "@/lib/requests";
 
 export type ServiceRequestState = {
@@ -18,6 +19,7 @@ export async function sendServiceRequest(type: RequestType, langValue: string, _
   try {
     const customer = await getCustomer();
     const { number, estimate } = await submitServiceRequest(type, formData, lang, customer?.id ?? null);
+    notifyServiceRequest(number);
     revalidatePath("/admin", "layout");
     return { number, estimate };
   } catch (e) {

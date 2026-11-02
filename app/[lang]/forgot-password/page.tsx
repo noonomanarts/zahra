@@ -5,7 +5,10 @@ import AuthCard from "@/components/auth/AuthCard";
 import { getSite } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, localizeHref } from "@/lib/i18n/config";
+import { emailReady } from "@/lib/email";
 import { whatsappDigits, whatsappUrl } from "@/lib/whatsapp";
+import { requestPasswordReset } from "../account-actions";
+import { ForgotForm } from "../account/profile/ProfileForms";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/forgot-password">): Promise<Metadata> {
   const { lang } = await params;
@@ -16,7 +19,15 @@ export default async function ForgotPasswordPage({ params }: PageProps<"/[lang]/
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const a = getDictionary(lang).auth;
-  const site = await getSite();
+  const [site, canEmail] = await Promise.all([getSite(), emailReady()]);
+  if (canEmail) {
+    return (
+      <AuthCard title={a.forgotTitle} intro={a.forgotEmailIntro}>
+        <ForgotForm action={requestPasswordReset.bind(null, lang)} />
+        <p className="mt-5 text-center"><Link href={localizeHref(lang, "/login")} className="text-sm font-medium text-brand-dark underline underline-offset-4">{a.backToLogin}</Link></p>
+      </AuthCard>
+    );
+  }
   const whatsapp = whatsappUrl(whatsappDigits(site), a.forgotMessage);
   const email = site.contact.emails[0];
   return (

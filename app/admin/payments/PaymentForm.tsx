@@ -56,7 +56,7 @@ export default function PaymentForm({ view }: { view: PaymentView }) {
       <Card title="AmwalPay" description={p.amwalHint}>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label={p.environment} hint={p.environmentHint}>
-            <select name="amwal_environment" defaultValue={view.amwalpay.environment} className={inputCls}>
+            <select key={String(view.amwalpay.environment)} name="amwal_environment" defaultValue={view.amwalpay.environment} className={inputCls}>
               <option value="prod">{p.environments.prod}</option>
               <option value="uat">{p.environments.uat}</option>
               <option value="sit">{p.environments.sit}</option>

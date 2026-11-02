@@ -6,6 +6,7 @@ import { db, schema } from "@/db";
 import { ORDER_STATUSES, type OrderStatus } from "@/db/schema";
 import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
+import { notifyOrder } from "@/lib/notifications";
 import { syncStock } from "@/lib/stock";
 
 export async function updateOrderStatus(formData: FormData) {
@@ -21,7 +22,10 @@ export async function updateOrderStatus(formData: FormData) {
     .update(schema.orders)
     .set({ status, ...(status === "paid" && !order.paidAt ? { paidAt: new Date() } : {}) })
     .where(eq(schema.orders.id, id));
-  if (order.status !== status) await audit(admin, "order.status_changed", { type: "order", id, label: order.number, details: { from: order.status, to: status } });
+  if (order.status !== status) {
+    await audit(admin, "order.status_changed", { type: "order", id, label: order.number, details: { from: order.status, to: status } });
+    if (status === "paid" || status === "shipped" || status === "completed" || status === "cancelled") notifyOrder(id, status, "staff");
+  }
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
 }

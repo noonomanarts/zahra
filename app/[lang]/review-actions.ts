@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { notifyAdmins } from "@/lib/admin-notifications";
 import { getCustomer } from "@/lib/customer-auth";
 import { canReview } from "@/lib/reviews";
 
@@ -12,7 +13,7 @@ export type ReviewState = { error?: "signIn" | "notBuyer" | "rating" | "body"; s
 export async function submitReview(productId: number, _prev: ReviewState, formData: FormData): Promise<ReviewState> {
   const customer = await getCustomer();
   if (!customer) return { error: "signIn" };
-  const product = await db.query.products.findFirst({ where: eq(schema.products.id, productId), columns: { id: true, kind: true } });
+  const product = await db.query.products.findFirst({ where: eq(schema.products.id, productId), columns: { id: true, kind: true, name: true } });
   if (!product || !(await canReview(customer.id, product.id, product.kind))) return { error: "notBuyer" };
   const rating = Number(formData.get("rating"));
   if (![1, 2, 3, 4, 5].includes(rating)) return { error: "rating" };
@@ -21,6 +22,7 @@ export async function submitReview(productId: number, _prev: ReviewState, formDa
   await db.insert(schema.productReviews)
     .values({ productId, customerId: customer.id, rating, body })
     .onConflictDoUpdate({ target: [schema.productReviews.productId, schema.productReviews.customerId], set: { rating, body, status: "pending", updatedAt: new Date() } });
+  await notifyAdmins("review.new", { name: customer.name, product: product.name, rating: String(rating) }, "/admin/reviews");
   revalidatePath("/admin/reviews");
   return { saved: true };
 }

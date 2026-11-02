@@ -50,6 +50,20 @@
       "when": 1793604948912,
       "tag": "0006_coupons_reviews_stock_gateways",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793606656046,
+      "tag": "0007_email_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793607014427,
+      "tag": "0008_admin_notifications",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,9 @@ import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { and, eq, gt, ne } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { consumeCustomerAuthAttempt, createCustomerSession, getCustomer } from "@/lib/customer-auth";
+import { consumeCustomerAuthAttempt, createCustomerSession, createPasswordReset, getCustomer } from "@/lib/customer-auth";
+import { emailReady } from "@/lib/email";
+import { notifyPasswordChanged, notifyPasswordReset } from "@/lib/notifications";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import type { AuthError } from "./auth-actions";
@@ -57,6 +59,18 @@ export async function changeCustomerPassword(lang: Locale, _prev: AccountFormSta
   await db.delete(schema.customerSessions).where(eq(schema.customerSessions.customerId, customer.id));
   await db.delete(schema.customerPasswordResets).where(eq(schema.customerPasswordResets.customerId, customer.id));
   await createCustomerSession(customer.id);
+  notifyPasswordChanged(customer.email, customer.name, home(lang));
+  return { saved: true };
+}
+
+/** Sends a one-hour link if the address has an account. The answer is the same either way, so no one can test addresses. */
+export async function requestPasswordReset(lang: Locale, _prev: AccountFormState, formData: FormData): Promise<AccountFormState> {
+  const email = field(formData, "email").trim().toLowerCase();
+  if (email.length > 254 || !emailPattern.test(email)) return { error: "invalidEmail" };
+  if (!(await consumeCustomerAuthAttempt(email, "reset"))) return { error: "rateLimited" };
+  if (!(await emailReady())) return { error: "unavailable" };
+  const customer = await db.query.customers.findFirst({ where: eq(schema.customers.email, email) });
+  if (customer && !customer.disabledAt) notifyPasswordReset(customer.email, customer.name, await createPasswordReset(customer.id), home(lang));
   return { saved: true };
 }
 
@@ -74,12 +88,14 @@ export async function resetCustomerPassword(lang: Locale, _prev: AccountFormStat
   const done = await db.transaction(async (tx) => {
     // taking the row inside the transaction is what makes the link single-use
     const [used] = await tx.delete(schema.customerPasswordResets).where(and(eq(schema.customerPasswordResets.id, hashToken(token)), gt(schema.customerPasswordResets.expiresAt, new Date()))).returning();
-    if (!used) return false;
+    if (!used) return null;
     await tx.update(schema.customers).set({ passwordHash }).where(eq(schema.customers.id, used.customerId));
     await tx.delete(schema.customerSessions).where(eq(schema.customerSessions.customerId, used.customerId));
     await tx.delete(schema.customerPasswordResets).where(eq(schema.customerPasswordResets.customerId, used.customerId));
-    return true;
+    return used.customerId;
   });
   if (!done) return { error: "resetInvalid" };
+  const customer = await db.query.customers.findFirst({ where: eq(schema.customers.id, done), columns: { email: true, name: true } });
+  if (customer) notifyPasswordChanged(customer.email, customer.name, home(lang));
   redirect(`/${home(lang)}/login?reset=1`);
 }

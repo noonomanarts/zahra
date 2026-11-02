@@ -199,6 +199,22 @@ export const orderItems = sqliteTable("order_items", {
   unitCost: real("unit_cost"),
 });
 
+// ---------- email ----------
+
+/** What was sent, to whom and whether it worked. Never the body, which can hold a password link. */
+export const emailLog = sqliteTable(
+  "email_log",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    recipient: text("recipient").notNull(),
+    subject: text("subject").notNull(),
+    kind: text("kind").notNull(),
+    error: text("error"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [index("email_log_created_idx").on(t.createdAt)],
+);
+
 // ---------- coupons ----------
 
 export const COUPON_TYPES = ["percent", "fixed"] as const;
@@ -254,6 +270,8 @@ export const adminUsers = sqliteTable("admin_users", {
   lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
   lastSeenAt: integer("last_seen_at", { mode: "timestamp" }),
   passwordChangedAt: integer("password_changed_at", { mode: "timestamp" }),
+  /** "mark all as read": everything up to this notification; single reads are in admin_notification_reads */
+  lastReadNotificationId: integer("last_read_notification_id").notNull().default(0),
   ...timestamps,
 });
 
@@ -266,6 +284,28 @@ export const sessions = sqliteTable("sessions", {
   ip: text("ip"),
   userAgent: text("user_agent"),
 });
+
+/** News for the team inside the panel. The words are chosen when shown, in each person's panel language. */
+export const adminNotifications = sqliteTable(
+  "admin_notifications",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    kind: text("kind").notNull(),
+    params: text("params", { mode: "json" }).$type<Record<string, string>>().notNull(),
+    href: text("href"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [index("admin_notifications_kind_idx").on(t.kind)],
+);
+
+export const adminNotificationReads = sqliteTable(
+  "admin_notification_reads",
+  {
+    notificationId: integer("notification_id").notNull().references(() => adminNotifications.id, { onDelete: "cascade" }),
+    userId: integer("user_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.notificationId, t.userId] })],
+);
 
 /** Sign-ins and changes to people and access. The actor's email is copied so entries outlive deleted users. */
 export const adminAuditLog = sqliteTable(

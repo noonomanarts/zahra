@@ -8,9 +8,10 @@ import { Highlight, HighlightItem } from "@animate-ui/react/primitives/effects/h
 import type { Permission } from "@/lib/permissions";
 import { useAdminI18n } from "./AdminI18n";
 import { Icon, type IconName } from "./icons";
+import NotificationBell, { NotificationProvider } from "./NotificationBell";
 import { Tip } from "./motion";
 
-type NavKey = "dashboard" | "orders" | "requests" | "finance" | "products" | "workshops" | "categories" | "tags" | "pages" | "currencies" | "settings" | "users" | "customers" | "account" | "forbidden" | "search" | "coupons" | "reviews" | "payments";
+type NavKey = "dashboard" | "orders" | "requests" | "finance" | "products" | "workshops" | "categories" | "tags" | "pages" | "currencies" | "settings" | "users" | "customers" | "account" | "forbidden" | "search" | "coupons" | "reviews" | "payments" | "email" | "notifications";
 type NavItem = { href: string; key: NavKey; icon: IconName; needs?: Permission };
 
 const GROUPS: { key: "overview" | "sales" | "catalogue" | "people" | "site"; items: NavItem[] }[] = [
@@ -47,6 +48,7 @@ const GROUPS: { key: "overview" | "sales" | "catalogue" | "people" | "site"; ite
       { href: "/admin/pages", key: "pages", icon: "pages", needs: "pages.view" },
       { href: "/admin/currencies", key: "currencies", icon: "currencies", needs: "currencies.view" },
       { href: "/admin/payments", key: "payments", icon: "card", needs: "payments.view" },
+      { href: "/admin/email", key: "email", icon: "mail", needs: "email.view" },
       { href: "/admin/settings", key: "settings", icon: "settings", needs: "settings.view" },
     ],
   },
@@ -57,6 +59,7 @@ const OTHER: NavItem[] = [
   { href: "/admin/account", key: "account", icon: "settings" },
   { href: "/admin/forbidden", key: "forbidden", icon: "ban" },
   { href: "/admin/search", key: "search", icon: "search" },
+  { href: "/admin/notifications", key: "notifications", icon: "bell" },
 ];
 
 const spring = { type: "spring", stiffness: 380, damping: 34 } as const;
@@ -175,6 +178,7 @@ export default function AdminShell({
   name,
   email,
   permissions,
+  unreadNotifications,
   newRequests,
   logout,
   setLanguage,
@@ -183,6 +187,7 @@ export default function AdminShell({
   name: string;
   email: string;
   permissions: Permission[];
+  unreadNotifications: number;
   newRequests: number;
   logout: () => Promise<void>;
   setLanguage: (data: FormData) => Promise<void>;
@@ -203,10 +208,13 @@ export default function AdminShell({
     if (!window.location.hash) mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname]);
 
+  const live = permissions.length > 0;
+
   return (
+    <NotificationProvider initialUnread={unreadNotifications} enabled={live}>
     <div className="min-h-screen lg:grid lg:h-dvh lg:min-h-0 lg:grid-cols-[272px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <aside className="hidden border-e border-zinc-200/80 bg-white lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden">
-        <div className="shrink-0 space-y-3 p-4 pb-2"><Brand name={name} />{permissions.length > 0 && <SearchBox />}</div>
+        <div className="shrink-0 space-y-3 p-4 pb-2"><div className="flex items-center justify-between gap-1"><Brand name={name} />{live && <NotificationBell />}</div>{live && <SearchBox />}</div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} permissions={permissions} /></div>
         <div className="shrink-0 p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
       </aside>
@@ -221,8 +229,9 @@ export default function AdminShell({
             <Icon name={current.icon} className="shrink-0 text-zinc-400" />
             <span className="truncate">{t.nav[current.key]}</span>
           </span>
+          {live && <span className="ms-auto"><NotificationBell /></span>}
           {newRequests > 0 && current.key !== "requests" && (
-            <Link href="/admin/requests?status=new" className="ms-auto flex items-center gap-1.5 rounded-full bg-brand-dark px-2.5 py-1 text-xs font-semibold text-white">
+            <Link href="/admin/requests?status=new" className="flex items-center gap-1.5 rounded-full bg-brand-dark px-2.5 py-1 text-xs font-semibold text-white">
               <Icon name="requests" size={14} /> {newRequests}
             </Link>
           )}
@@ -248,5 +257,6 @@ export default function AdminShell({
         <div className="mx-auto max-w-[1400px]">{children}</div>
       </main>
     </div>
+    </NotificationProvider>
   );
 }

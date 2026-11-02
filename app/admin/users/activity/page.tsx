@@ -17,7 +17,7 @@ const GROUPS = {
   customer: ["customer%"],
   sales: ["order%", "request.%", "finance.%", "coupon.%", "payments.%"],
   catalogue: ["product.%", "workshop.%", "term.%", "review.%"],
-  site: ["page.%", "settings.%", "currency.%"],
+  site: ["page.%", "settings.%", "currency.%", "email.%"],
 } as const;
 
 const eventStyle = (action: string): { icon: IconName; cls: string } => {
@@ -25,6 +25,7 @@ const eventStyle = (action: string): { icon: IconName; cls: string } => {
   if (action.endsWith("deleted") || action.endsWith("disabled")) return { icon: "ban", cls: "bg-amber-50 text-amber-700" };
   if (action.startsWith("auth.")) return { icon: "key", cls: "bg-zinc-100 text-zinc-600" };
   if (action.includes("role_changed")) return { icon: "shield", cls: "bg-brand-soft text-brand-ink" };
+  if (action.startsWith("email.")) return { icon: "mail", cls: "bg-sky-50 text-sky-700" };
   if (action.startsWith("coupon.")) return { icon: "ticket", cls: "bg-emerald-50 text-emerald-700" };
   if (action.startsWith("review.")) return { icon: "star", cls: "bg-amber-50 text-amber-700" };
   if (action.startsWith("payments.")) return { icon: "card", cls: "bg-brand-soft text-brand-ink" };

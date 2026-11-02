@@ -11,7 +11,7 @@ export const AUDIT_ACTIONS = [
   "product.saved", "product.deleted", "workshop.content_saved", "workshop.access_granted", "workshop.access_revoked",
   "term.saved", "term.deleted", "page.saved", "settings.saved",
   "currency.rates_fetched", "currency.rates_approved", "currency.rates_saved", "finance.entry_added", "finance.entry_deleted",
-  "coupon.saved", "coupon.deleted", "review.moderated", "review.deleted", "payments.saved",
+  "coupon.saved", "coupon.deleted", "review.moderated", "review.deleted", "payments.saved", "email.saved", "email.test",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

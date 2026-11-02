@@ -111,7 +111,7 @@ const authGlobal = globalThis as unknown as { customerAuthAttempts?: Map<string,
 const attempts = authGlobal.customerAuthAttempts ??= new Map<string, AttemptBucket>();
 
 /** Bounded, per-process abuse protection; a shared limiter can replace this on multi-instance hosts. */
-export async function consumeCustomerAuthAttempt(email: string, purpose: "login" | "register" | "admin-login" | "reset" | "coupon") {
+export async function consumeCustomerAuthAttempt(email: string, purpose: "login" | "register" | "admin-login" | "reset" | "coupon" | "contact") {
   const now = Date.now();
   for (const [key, bucket] of attempts) {
     if (bucket.resetsAt <= now) attempts.delete(key);
@@ -120,11 +120,11 @@ export async function consumeCustomerAuthAttempt(email: string, purpose: "login"
   const requestHeaders = await headers();
   const ip = (requestHeaders.get("x-forwarded-for")?.split(",")[0]
     ?? requestHeaders.get("x-real-ip"))?.trim().slice(0, 100);
-  // coupon guesses are counted per visitor only: a shared count would let one person block the box for everyone
-  const limits: [string, number][] = purpose === "coupon" ? [] : [
+  // coupon guesses and contact messages are counted per visitor only: a shared count would let one person block the box for everyone
+  const limits: [string, number][] = purpose === "coupon" || purpose === "contact" ? [] : [
     [`${purpose}:email:${hashToken(email)}`, purpose === "register" ? 5 : 10],
   ];
-  if (ip) limits.push([`${purpose}:ip:${hashToken(ip)}`, purpose === "register" ? 10 : 50]);
+  if (ip) limits.push([`${purpose}:ip:${hashToken(ip)}`, purpose === "register" ? 10 : purpose === "contact" ? 5 : 50]);
 
   const missing = limits.filter(([key]) => !attempts.has(key)).length;
   if (limits.some(([key, limit]) => (attempts.get(key)?.count ?? 0) >= limit)) return false;
