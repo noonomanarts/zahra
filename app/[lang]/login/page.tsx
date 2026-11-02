@@ -15,9 +15,9 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/login">): 
 export default async function LoginPage({ params, searchParams }: PageProps<"/[lang]/login">) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const query = (await searchParams).next;
+  const { next: query, reset } = await searchParams;
   const next = await safeNext(lang, Array.isArray(query) ? query[0] : query);
   if (await getCustomer()) redirect(next);
   const a = getDictionary(lang).auth;
-  return <AuthCard title={a.loginTitle} intro={a.loginIntro}><CustomerAuthForm mode="login" next={next.endsWith("/account") ? undefined : next} submitAction={loginCustomer.bind(null, lang)} /></AuthCard>;
+  return <AuthCard title={a.loginTitle} intro={reset ? a.resetDone : a.loginIntro}><CustomerAuthForm mode="login" next={next.endsWith("/account") ? undefined : next} submitAction={loginCustomer.bind(null, lang)} /></AuthCard>;
 }

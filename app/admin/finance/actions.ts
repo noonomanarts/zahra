@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { ENTRY_KINDS, type EntryKind } from "@/db/schema";
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { FINANCE_CATEGORIES } from "@/lib/finance";
 import { getAdminT } from "@/lib/i18n/admin-server";
@@ -11,7 +12,7 @@ import { getAdminT } from "@/lib/i18n/admin-server";
 export type EntryState = { ok?: string; error?: string; key?: number };
 
 export async function addEntry(_prev: EntryState, formData: FormData): Promise<EntryState> {
-  await requireAdmin();
+  const admin = await requireAdmin("finance.manage");
   const { t } = await getAdminT();
   const date = String(formData.get("date") ?? "");
   const kind = String(formData.get("kind")) as EntryKind;
@@ -28,12 +29,14 @@ export async function addEntry(_prev: EntryState, formData: FormData): Promise<E
     description,
     amount: Math.round(amount * 1000) / 1000,
   });
+  await audit(admin, "finance.entry_added", { type: "finance", label: `${description} (${amount})` });
   revalidatePath("/admin/finance");
   return { ok: t.finance.added, key: Date.now() };
 }
 
 export async function deleteEntry(formData: FormData) {
-  await requireAdmin();
-  await db.delete(schema.financeEntries).where(eq(schema.financeEntries.id, Number(formData.get("id"))));
+  const admin = await requireAdmin("finance.manage");
+  const [removed] = await db.delete(schema.financeEntries).where(eq(schema.financeEntries.id, Number(formData.get("id")))).returning();
+  if (removed) await audit(admin, "finance.entry_deleted", { type: "finance", label: `${removed.description} (${removed.amount})` });
   revalidatePath("/admin/finance");
 }

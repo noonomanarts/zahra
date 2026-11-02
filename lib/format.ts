@@ -10,3 +10,6 @@ export function slugify(value: string) {
     .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/** Can this product be bought now? The switch in the admin, and the count when pieces are counted. */
+export const effectiveInStock = (p: { inStock: boolean; stock: number | null }) => p.inStock && (p.stock === null || p.stock > 0);

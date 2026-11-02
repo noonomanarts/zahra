@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DEPARTMENTS, SECTION_CATEGORIES, defaultMainMenu, sectionHref } from "../lib/catalog";
-import { fixWhatsappLinks, whatsappDigits, whatsappUrl } from "../lib/whatsapp";
+import { customerWhatsapp, fixWhatsappLinks, whatsappDigits, whatsappUrl } from "../lib/whatsapp";
+import { plainText } from "../lib/seo";
 
 test("broken WhatsApp short links are rewritten to the number", () => {
   const html = '<a href="https://wa.me/message/AXQCQFPDQFM7L1">+968</a> <a href="https://api.whatsapp.com/message/H3U7JS3CUT3HI1?autoload=1&amp;app_absent=0">x</a>';
@@ -34,4 +35,15 @@ test("shop structure: unique slugs, bilingual labels, menu matches the brief", (
   assert.deepEqual(DEPARTMENTS[0].sections.map((s) => s.label.en), [
     "Digital Patterns", "Classic Kits", "Finished Item Kits", "Stitchable Items", "Free Cross Stitch Pattern", "Customized Pattern",
   ]);
+});
+
+test("customer numbers become WhatsApp numbers", () => {
+  assert.equal(customerWhatsapp("9123 4567"), "96891234567");
+  assert.equal(customerWhatsapp("+968 9123 4567"), "96891234567");
+  assert.equal(customerWhatsapp("00964 770 123 4567"), "9647701234567");
+});
+
+test("descriptions become plain text for search engines", () => {
+  assert.equal(plainText('<!-- zahra:markdown -->\n## Title\n\n**Bold** [link](/shop) <b>html</b>', 100), "Title Bold link html");
+  assert.equal(plainText("one two three four", 9), "one two…");
 });

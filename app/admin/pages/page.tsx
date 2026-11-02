@@ -10,7 +10,7 @@ import { Badge, PageTitle } from "@/components/admin/ui";
 export const metadata: Metadata = { title: "Pages" };
 
 export default async function PagesPage() {
-  await requireAdmin();
+  await requireAdmin("pages.view");
   const { lang, t } = await getAdminT();
   const pages = await db.select().from(schema.pages).orderBy(asc(schema.pages.slug));
   const sorted = [...pages.filter((p) => p.slug === "home"), ...pages.filter((p) => p.slug !== "home")];

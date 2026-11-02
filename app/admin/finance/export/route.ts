@@ -1,4 +1,4 @@
-import { getAdmin } from "@/lib/auth";
+import { adminCan } from "@/lib/auth";
 import { PERIODS, financeReport, periodRange, type Period } from "@/lib/finance";
 
 const csv = (rows: (string | number)[][]) =>
@@ -6,7 +6,7 @@ const csv = (rows: (string | number)[][]) =>
 
 /** CSV of the selected period: summary, monthly figures and every cost/expense entry (amounts in OMR). */
 export async function GET(request: Request) {
-  if (!(await getAdmin())) return new Response("Forbidden", { status: 403 });
+  if (!(await adminCan("finance.view"))) return new Response("Forbidden", { status: 403 });
   const q = new URL(request.url).searchParams;
   const period = (PERIODS as readonly string[]).includes(q.get("p") ?? "") ? (q.get("p") as Period) : "month";
   const r = await financeReport(periodRange(period, q.get("from") ?? undefined, q.get("to") ?? undefined));

@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { getAdmin } from "@/lib/auth";
+import { adminCan } from "@/lib/auth";
 import { attachment, readPrivateFile } from "@/lib/uploads";
 
 /** Files attached to a Customized Pattern / Print My Design request – admin only. */
 export async function GET(request: Request, { params }: RouteContext<"/admin/requests/[id]/files/[index]">) {
-  if (!(await getAdmin())) return new Response("Forbidden", { status: 403 });
+  if (!(await adminCan("requests.view"))) return new Response("Forbidden", { status: 403 });
   const { id, index } = await params;
   const row = await db.query.serviceRequests.findFirst({ where: eq(schema.serviceRequests.id, Number(id)) });
   const entry = row?.files[Number(index)];

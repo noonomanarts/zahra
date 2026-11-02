@@ -1,11 +1,16 @@
 import "server-only";
-import { eq, inArray, or } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
+import { and, eq, gte, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { checkCoupon } from "./coupons";
 import { getSite } from "./data";
+import { effectiveInStock } from "./format";
+import { releaseAbandonedOrders, syncStock } from "./stock";
 import { getCurrencySettings } from "./currency-server";
 import { isCurrency, type CurrencyCode } from "./currency";
 import type { Locale } from "./i18n/config";
-import { createIntention, paymobEnabled, toMinorUnits, type PaymobTransaction } from "./paymob";
+import { activeGateway } from "./payments";
+import { createIntention, toMinorUnits, type PaymobTransaction } from "./paymob";
 
 export type CheckoutInput = {
   items: { slug: string; quantity: number }[];
@@ -16,6 +21,7 @@ export type CheckoutInput = {
   city?: string;
   address?: string;
   notes?: string;
+  coupon?: string;
 };
 
 type OrderContext = { appUrl: string; lang: Locale; displayCurrency?: string; customerId?: number | null };
@@ -33,8 +39,9 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
   }
   if (!quantities.size) throw new CheckoutError("empty");
 
+  await releaseAbandonedOrders();
   const rows = await db.select().from(schema.products).where(inArray(schema.products.slug, [...quantities.keys()]));
-  const available = rows.filter((p) => p.published && p.inStock);
+  const available = rows.filter((p) => p.published && effectiveInStock(p));
   if (available.length !== quantities.size) throw new CheckoutError("unavailable");
 
   // workshops unlock in the buyer's account, so they can only be bought while signed in
@@ -60,13 +67,28 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
 
   const subtotal = lines.reduce((n, l) => n + l.unitPrice * l.quantity, 0);
   const shipping = needsShipping ? site.shippingFee : 0;
-  const total = Math.round((subtotal + shipping) * 1000) / 1000;
   const currency = available[0].currency;
   // remember what the customer saw; the charge itself is always in the store currency (OMR)
   const shown: CurrencyCode = isCurrency(displayCurrency) ? displayCurrency : "OMR";
   const displayRate = shown === "OMR" ? 1 : (await getCurrencySettings()).rates[shown];
 
+  const counted = lines.filter((l) => !l.digital && available.find((p) => p.id === l.productId)?.stock !== null);
+
   const order = await db.transaction(async (tx) => {
+    // checked here, so two customers can't take the last use of a coupon or the last piece of a kit
+    const applied = input.coupon ? await checkCoupon(tx, input.coupon, subtotal, input.email) : null;
+    if (applied && "problem" in applied) throw new CheckoutError("coupon");
+    const discount = applied?.discount ?? 0;
+    const total = Math.round((subtotal + shipping - discount) * 1000) / 1000;
+    for (const line of counted) {
+      const [taken] = await tx
+        .update(schema.products)
+        .set({ stock: sql`${schema.products.stock} - ${line.quantity}` })
+        .where(and(eq(schema.products.id, line.productId), isNotNull(schema.products.stock), gte(schema.products.stock, line.quantity)))
+        .returning({ id: schema.products.id });
+      if (!taken) throw new CheckoutError("outOfStock");
+    }
+    const free = total <= 0;
     const [created] = await tx
       .insert(schema.orders)
       .values({
@@ -85,7 +107,12 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
         customerId,
         subtotal,
         shipping,
+        discount,
+        couponCode: applied && "coupon" in applied ? applied.coupon.code : null,
+        stockReserved: counted.length > 0,
         total,
+        // nothing left to pay, so there is no payment to wait for
+        ...(free ? { status: "paid" as const, paidAt: new Date() } : {}),
       })
       .returning();
     const number = `ZDS-${1000 + created.id}`;
@@ -94,7 +121,17 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
     return { ...created, number };
   });
 
-  if (!paymobEnabled()) return { orderNumber: order.number, redirectTo: `/${lang}/checkout/result?ref=${order.number}` };
+  const total = order.total;
+  const gateway = total > 0 ? await activeGateway() : null;
+  if (!gateway) return { orderNumber: order.number, redirectTo: `/${lang}/checkout/result?ref=${order.number}` };
+
+  if (gateway === "amwalpay") {
+    // the reference is also the address of the payment page, so it can't be guessed from the order number
+    const reference = `${order.number}-${randomBytes(6).toString("hex")}`;
+    await db.update(schema.orders).set({ paymentReference: reference, paymentGateway: "amwalpay" }).where(eq(schema.orders.id, order.id));
+    return { orderNumber: order.number, redirectTo: `/${lang}/checkout/pay?ref=${reference}` };
+  }
+
 
   // unique per payment attempt, so a failed payment can be retried with a new intention
   const reference = `${order.number}-${Date.now().toString(36)}`;
@@ -102,50 +139,60 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
     reference,
     currency,
     total,
-    items: [...lines, ...(shipping ? [{ name: "Shipping", unitPrice: shipping, quantity: 1 }] : [])],
+    // Paymob wants the items to add up to the amount and has no discount line, so a discounted order is one item
+    items: order.discount > 0
+      ? [{ name: `Order ${order.number}`, unitPrice: total, quantity: 1 }]
+      : [...lines, ...(shipping ? [{ name: "Shipping", unitPrice: shipping, quantity: 1 }] : [])],
     customer: input,
     returnUrl: `${appUrl}/${lang}/checkout/result`,
     appUrl,
   });
   await db
     .update(schema.orders)
-    .set({ paymentReference: reference, paymobIntentionId: intention.intentionId, paymobOrderId: intention.paymobOrderId })
+    .set({ paymentReference: reference, paymentGateway: "paymob", paymobIntentionId: intention.intentionId, paymobOrderId: intention.paymobOrderId })
     .where(eq(schema.orders.id, order.id));
   return { orderNumber: order.number, redirectTo: intention.checkoutUrl };
 }
 
 /** `message` is a key of the "errors" dictionary section, translated for the customer. */
 export class CheckoutError extends Error {
-  constructor(public code: "empty" | "unavailable" | "address" | "loginRequired") {
+  constructor(public code: "empty" | "unavailable" | "address" | "loginRequired" | "coupon" | "outOfStock") {
     super(code);
   }
 }
 
-/** Applies a verified Paymob transaction to its order. Idempotent: a paid order is never downgraded. */
+type Order = typeof schema.orders.$inferSelect;
+
+/** Applies a verified payment result to its order. Idempotent: a paid order is never downgraded. */
+async function settle(order: Order, result: { success: boolean; pending: boolean; amountMinor: number; ids: Partial<Order> }) {
+  if (result.success && !result.pending) {
+    if (result.amountMinor !== toMinorUnits(order.total)) {
+      console.error(`Payment amount mismatch for ${order.number}: got ${result.amountMinor}, expected ${toMinorUnits(order.total)}`);
+      return order;
+    }
+    if (order.status === "pending" || order.status === "failed") {
+      await syncStock(order, "paid");
+      await db.update(schema.orders).set({ status: "paid", paidAt: new Date(), ...result.ids }).where(eq(schema.orders.id, order.id));
+      return { ...order, status: "paid" as const };
+    }
+  } else if (!result.pending && order.status === "pending") {
+    await syncStock(order, "failed");
+    await db.update(schema.orders).set({ status: "failed", ...result.ids }).where(eq(schema.orders.id, order.id));
+    return { ...order, status: "failed" as const };
+  }
+  return order;
+}
+
 export async function applyPaymobTransaction(tx: PaymobTransaction) {
   const conditions = [eq(schema.orders.paymobOrderId, tx.paymobOrderId)];
   if (tx.reference) conditions.push(eq(schema.orders.paymentReference, tx.reference));
   const order = await db.query.orders.findFirst({ where: or(...conditions) });
   if (!order) return null;
+  return settle(order, { ...tx, ids: tx.success && !tx.pending ? { paymobTransactionId: tx.transactionId, paymobOrderId: tx.paymobOrderId } : { paymobTransactionId: tx.transactionId } });
+}
 
-  if (tx.success && !tx.pending) {
-    if (tx.amountMinor !== toMinorUnits(order.total)) {
-      console.error(`Paymob amount mismatch for ${order.number}: got ${tx.amountMinor}, expected ${toMinorUnits(order.total)}`);
-      return order;
-    }
-    if (order.status === "pending" || order.status === "failed") {
-      await db
-        .update(schema.orders)
-        .set({ status: "paid", paidAt: new Date(), paymobTransactionId: tx.transactionId, paymobOrderId: tx.paymobOrderId })
-        .where(eq(schema.orders.id, order.id));
-      return { ...order, status: "paid" as const };
-    }
-  } else if (!tx.pending && order.status === "pending") {
-    await db
-      .update(schema.orders)
-      .set({ status: "failed", paymobTransactionId: tx.transactionId })
-      .where(eq(schema.orders.id, order.id));
-    return { ...order, status: "failed" as const };
-  }
-  return order;
+export async function applyAmwalTransaction(tx: { reference: string; transactionId: string; success: boolean; amountMinor: number }) {
+  const order = await db.query.orders.findFirst({ where: and(eq(schema.orders.paymentReference, tx.reference), eq(schema.orders.paymentGateway, "amwalpay")) });
+  if (!order) return null;
+  return settle(order, { ...tx, pending: false, ids: { gatewayTransactionId: tx.transactionId } });
 }

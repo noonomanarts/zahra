@@ -57,6 +57,7 @@ export async function financeReport(range: { from: string; to: string }) {
   // the cost saved with the order; orders placed before costs were recorded use the product's current unit cost
   const costOf = (i: (typeof items)[number]) => i.unitCost ?? (i.productId ? currentCost.get(i.productId) : null) ?? null;
 
+  const paidShare = new Map(orders.map((o) => [o.id, o.subtotal > 0 ? (o.subtotal - o.discount) / o.subtotal : 1]));
   const dayOf = new Map(orders.map((o) => [o.id, muscatDay(o.paidAt ?? o.createdAt)]));
   const inRange = (day: string) => day >= range.from && day <= range.to;
 
@@ -70,7 +71,7 @@ export async function financeReport(range: { from: string; to: string }) {
     for (const t of buckets(dayOf.get(o.id)!)) {
       t.orders++;
       t.revenue += o.total;
-      t.productSales += o.subtotal;
+      t.productSales += o.subtotal - o.discount;
       t.shipping += o.shipping;
     }
   }
@@ -87,7 +88,8 @@ export async function financeReport(range: { from: string; to: string }) {
     const key = i.productId ? `p${i.productId}` : i.name;
     const row = top.get(key) ?? { name: i.name, productId: i.productId, quantity: 0, sales: 0, cost: 0 };
     row.quantity += i.quantity;
-    row.sales = round(row.sales + i.unitPrice * i.quantity);
+    // a coupon lowers every line of its order by the same share
+    row.sales = round(row.sales + i.unitPrice * i.quantity * (paidShare.get(i.orderId) ?? 1));
     row.cost = round(row.cost + lineCost);
     top.set(key, row);
   }

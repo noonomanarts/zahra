@@ -29,6 +29,27 @@
       "when": 1793552994102,
       "tag": "0003_workshops_requests_finance",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793602440351,
+      "tag": "0004_admin_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793603890110,
+      "tag": "0005_customer_password_resets",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793604948912,
+      "tag": "0006_coupons_reviews_stock_gateways",
+      "breakpoints": true
     }
   ]
 }

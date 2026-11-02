@@ -28,20 +28,36 @@ The server needs a writable `storage/` folder (database, uploaded images, privat
 | `npm run test:features` | WhatsApp links and shop-structure checks |
 | `npm run extract` | re-extract `data/*.json` from the static mirror in `theme/` |
 | `npm run test:auth` | test customer auth through production HTTP forms with a disposable database; run `npm run build` first |
+| `npm run test:permissions` | access rules, and that every admin page, action and download checks a permission |
+| `npm run test:access` | test administrator access through production HTTP forms with a disposable database; run `npm run build` first |
 | `npm run test:pwa` | verify private-route and service-worker cache behavior |
 
 ## Admin panel (`/admin`)
 
-- **Orders** – list/filter by status, order details, change status (paid → processing → shipped → completed)
+- **Orders** – list/filter by status, search, CSV export, order details, message the customer on WhatsApp, change status (paid → processing → shipped → completed)
 - **Products** – create/edit/delete, prices and sale prices, stock, digital/physical, image upload and ordering, categories, tags, publish/draft
 - **Categories / Tags** – add, rename, change slug, delete
 - **Pages** – edit the home page and static pages block by block (headings, text, images, buttons, FAQ, videos, product lists)
 - **Settings** – store name, logo, contact details, WhatsApp number, social links, shipping fee, menus,
-  Print My Design options (fabrics, hoop sizes, fees), admin password
+  Print My Design options (fabrics, hoop sizes, fees)
+- **Customers** – registered accounts with orders, spend, workshops and requests; search, filters, CSV export;
+  edit details, sign out everywhere, suspend or delete an account
+- **Team & access** – panel users, roles (Owner, Administrator, Store manager, Sales & support, Content editor,
+  Accountant, Viewer, Custom), the access matrix and an activity log of sign-ins and every change made in the panel
+- **Search** – the box in the sidebar finds orders, customers, products, workshops, requests and team members,
+  limited to the sections the user may open
+- **My account** – each user's own profile, password and signed-in devices
 - **Requests** – Customized Pattern and Print My Design requests with their uploaded files, status and notes
   (badge in the sidebar for new requests)
 - **Finance** – sales (paid orders), costs (product unit costs + recorded purchases), expenses and net profit per
   period, last 12 months, best sellers, CSV export
+
+
+Access is defined in `lib/permissions.ts`: every section has the level none, view or manage. Pages and Server
+Actions call `requireAdmin("orders.view")` / `requireAdmin("orders.manage")` and downloads call `adminCan(...)`; the
+menu and read-only views only reflect those checks. `npm run test:permissions` fails if a new page, action or download
+skips them. Migration `0004_admin_access` makes every existing admin an Owner. New members get a temporary password
+shown once, and can open nothing else until they replace it.
 
 ## Shop structure
 
@@ -93,7 +109,9 @@ Sessions are stored in the database (`sessions` table); passwords are hashed wit
 ## Customer accounts
 
 The header links to localized login and registration pages (`/en/login`, `/en/register`, and Arabic equivalents).
-Customers can create an account, sign in, view their name/email at `/en/account`, and sign out.
+Customers can create an account, sign in, edit their details and password at `/en/account/profile`, and sign out.
+The site sends no email, so a forgotten password goes through the studio: `/en/forgot-password` opens WhatsApp, and
+Admin → Customers → **Create password link** makes a private one-hour, single-use link (only its hash is stored).
 Customer credentials, sessions and cookies are separate from admin access. Apply pending migrations with
 `npm run db:migrate` before using these pages. Existing guest checkout remains available.
 

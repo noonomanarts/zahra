@@ -245,6 +245,9 @@ export default function Header({ lang, logo, name, menu }: {
           </nav>
 
           <div className="flex items-center gap-3">
+            <Link href={`${href("/shop")}#shop-search`} aria-label={t.shop.search} title={t.shop.search} className="grid size-10 place-items-center rounded-full transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-brand-dark">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+            </Link>
             <CartButton />
             <Link
               href={href("/shop")}

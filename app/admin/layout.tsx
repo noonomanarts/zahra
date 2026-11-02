@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { count, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { getAdmin } from "@/lib/auth";
+import { can, permissionList } from "@/lib/permissions";
 import { dirOf } from "@/lib/i18n/config";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import AdminI18nProvider from "@/components/admin/AdminI18n";
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const [admin, { lang }] = await Promise.all([getAdmin(), getAdminT()]);
-  const [fresh] = admin
+  const [fresh] = admin && !admin.mustChangePassword && can(admin.permissions, "requests.view")
     ? await db.select({ n: count() }).from(schema.serviceRequests).where(eq(schema.serviceRequests.status, "new"))
     : [{ n: 0 }];
 
@@ -30,7 +31,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           {!admin ? (
             children
           ) : (
-            <AdminShell name="Zahras Design Studio" email={admin.email} newRequests={fresh.n} logout={logout} setLanguage={setAdminLanguage}>
+            <AdminShell name="Zahras Design Studio" email={admin.email} permissions={admin.mustChangePassword ? [] : permissionList(admin.permissions)} newRequests={fresh.n} logout={logout} setLanguage={setAdminLanguage}>
               {children}
             </AdminShell>
           )}

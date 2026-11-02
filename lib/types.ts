@@ -42,6 +42,7 @@ export type Product = {
   price: number;
   regularPrice: number | null;
   inStock: boolean;
+  stock: number | null;
   digital: boolean;
   published: boolean;
   images: string[];

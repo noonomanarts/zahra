@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { CURRENCIES } from "@/lib/currency";
 import { fetchBankMuscatRates, getCurrencySettings, saveCurrencySettings } from "@/lib/currency-server";
@@ -11,11 +12,12 @@ export type CurrencyState = { error?: string; ok?: string };
 
 /** Fetches Bank Muscat's rates and keeps them as "pending" until an admin approves them. */
 export async function fetchRates(): Promise<CurrencyState> {
-  await requireAdmin();
+  const admin = await requireAdmin("currencies.manage");
   const { t } = await getAdminT();
   try {
     const pending = await fetchBankMuscatRates();
     await saveCurrencySettings({ ...(await getCurrencySettings()), pending });
+    await audit(admin, "currency.rates_fetched");
     revalidatePath("/admin", "layout");
     return { ok: t.currencies.fetched(Object.keys(pending.rates).length) };
   } catch (e) {
@@ -25,7 +27,7 @@ export async function fetchRates(): Promise<CurrencyState> {
 
 /** Makes the fetched Bank Muscat rates live (currencies the bank doesn't publish keep their rate). */
 export async function approveRates(): Promise<CurrencyState> {
-  await requireAdmin();
+  const admin = await requireAdmin("currencies.manage");
   const { t } = await getAdminT();
   const current = await getCurrencySettings();
   if (!current.pending) return { error: t.currencies.nothingPending };
@@ -34,6 +36,7 @@ export async function approveRates(): Promise<CurrencyState> {
     approvedAt: new Date().toISOString(),
     pending: null,
   });
+  await audit(admin, "currency.rates_approved");
   revalidateSite();
   revalidatePath("/admin", "layout");
   return { ok: t.currencies.approved };
@@ -41,7 +44,7 @@ export async function approveRates(): Promise<CurrencyState> {
 
 /** Saves manually edited rates (e.g. IQD, which Bank Muscat doesn't publish). */
 export async function saveRates(_prev: CurrencyState, formData: FormData): Promise<CurrencyState> {
-  await requireAdmin();
+  const admin = await requireAdmin("currencies.manage");
   const { t } = await getAdminT();
   const current = await getCurrencySettings();
   const rates = { ...current.rates };
@@ -52,6 +55,7 @@ export async function saveRates(_prev: CurrencyState, formData: FormData): Promi
     rates[code] = value;
   }
   await saveCurrencySettings({ ...current, rates, approvedAt: new Date().toISOString() });
+  await audit(admin, "currency.rates_saved");
   revalidateSite();
   revalidatePath("/admin", "layout");
   return { ok: t.currencies.saved };

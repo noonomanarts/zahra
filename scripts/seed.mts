@@ -88,7 +88,7 @@ const password = process.env.ADMIN_PASSWORD;
 if (email && password) {
   const existing = await db.query.adminUsers.findFirst({ where: eq(schema.adminUsers.email, email) });
   if (!existing) {
-    await db.insert(schema.adminUsers).values({ email, name: "Admin", passwordHash: await hashPassword(password) });
+    await db.insert(schema.adminUsers).values({ email, name: "Admin", role: "owner", passwordHash: await hashPassword(password), passwordChangedAt: new Date() });
     console.log(`admin user created: ${email}`);
   }
 } else {

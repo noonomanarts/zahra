@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { getAdmin } from "@/lib/auth";
+import { adminCan } from "@/lib/auth";
 import { getCustomer } from "@/lib/customer-auth";
 import { attachment, readPrivateFile } from "@/lib/uploads";
 import { ownsWorkshop } from "@/lib/workshops";
 
-/** Workshop downloads: only for customers who bought the workshop (and for the admin). */
+/** Workshop downloads: only for customers who bought the workshop (and for administrators with access to workshops). */
 export async function GET(_request: Request, { params }: RouteContext<"/api/workshops/[productId]/files/[fileId]">) {
   const { productId, fileId } = await params;
   const id = Number(productId);
@@ -13,8 +13,8 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/work
   const entry = product?.kind === "workshop" ? product.workshopFiles.find((f) => f.id === fileId) : undefined;
   if (!product || !entry) return new Response("Not found", { status: 404 });
 
-  const [admin, customer] = await Promise.all([getAdmin(), getCustomer()]);
-  if (!admin && !(customer && (await ownsWorkshop(customer.id, product.id)))) {
+  const [staff, customer] = await Promise.all([adminCan("workshops.view"), getCustomer()]);
+  if (!staff && !(customer && (await ownsWorkshop(customer.id, product.id)))) {
     return new Response("Forbidden", { status: 403 });
   }
 

@@ -1,26 +1,12 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { paymobConfig } from "./payments";
 
 // Paymob Unified Intention API (Oman): https://developers.paymob.com/paymob-docs/developers/intention-apis/create-intention
-const config = {
-  apiUrl: process.env.PAYMOB_API_URL ?? "https://oman.paymob.com",
-  checkoutUrl: process.env.PAYMOB_CHECKOUT_URL ?? "https://om.checkout.paymob.com",
-  secretKey: process.env.PAYMOB_SECRET_KEY ?? "",
-  publicKey: process.env.PAYMOB_PUBLIC_KEY ?? "",
-  hmacSecret: process.env.PAYMOB_HMAC_SECRET ?? "",
-  integrationIds: (process.env.PAYMOB_INTEGRATION_IDS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => (/^\d+$/.test(s) ? Number(s) : s)),
-  // amounts are sent in the smallest currency unit (OMR: 1 rial = 1000 baisa)
-  multiplier: Number(process.env.PAYMOB_AMOUNT_MULTIPLIER ?? 1000),
-};
+// amounts are sent in the smallest currency unit (OMR: 1 rial = 1000 baisa)
+const multiplier = Number(process.env.PAYMOB_AMOUNT_MULTIPLIER ?? 1000);
 
-export const paymobEnabled = () =>
-  !!(config.secretKey && config.publicKey && config.hmacSecret && config.integrationIds.length);
-
-export const toMinorUnits = (amount: number) => Math.round(amount * config.multiplier);
+export const toMinorUnits = (amount: number) => Math.round(amount * multiplier);
 
 type IntentionInput = {
   reference: string;
@@ -34,6 +20,7 @@ type IntentionInput = {
 };
 
 export async function createIntention(input: IntentionInput) {
+  const config = await paymobConfig();
   const [firstName, ...rest] = input.customer.name.trim().split(/\s+/);
   const res = await fetch(`${config.apiUrl}/v1/intention/`, {
     method: "POST",
@@ -81,8 +68,8 @@ const HMAC_KEYS = [
   "pending", "source_data.pan", "source_data.sub_type", "source_data.type", "success",
 ] as const;
 
-function sign(values: string[]) {
-  return createHmac("sha512", config.hmacSecret).update(values.join("")).digest("hex");
+function sign(values: string[], hmacSecret: string) {
+  return createHmac("sha512", hmacSecret).update(values.join("")).digest("hex");
 }
 
 function safeEqual(a: string, b: string) {
@@ -110,11 +97,12 @@ export type PaymobTransaction = {
 };
 
 /** Transaction processed callback (POST webhook): body `{ type, obj }`, signature in `?hmac=`. */
-export function verifyProcessedCallback(obj: PaymobTransactionObj, hmac: string): PaymobTransaction | null {
+export async function verifyProcessedCallback(obj: PaymobTransactionObj, hmac: string): Promise<PaymobTransaction | null> {
+  const config = await paymobConfig();
   const values = HMAC_KEYS.map((k) =>
     k === "order" ? str(obj.order?.id) : k.startsWith("source_data.") ? str(obj.source_data?.[k.slice(12)]) : str(obj[k]),
   );
-  if (!config.hmacSecret || !hmac || !safeEqual(sign(values), hmac)) return null;
+  if (!config.hmacSecret || !hmac || !safeEqual(sign(values, config.hmacSecret), hmac)) return null;
   return {
     transactionId: str(obj.id),
     paymobOrderId: str(obj.order?.id),
@@ -126,9 +114,10 @@ export function verifyProcessedCallback(obj: PaymobTransactionObj, hmac: string)
 }
 
 /** Transaction response callback (GET redirect back to the store): flat query params incl. `hmac`. */
-export function verifyResponseCallback(query: Record<string, string | undefined>): PaymobTransaction | null {
+export async function verifyResponseCallback(query: Record<string, string | undefined>): Promise<PaymobTransaction | null> {
+  const config = await paymobConfig();
   const values = HMAC_KEYS.map((k) => (k === "order" ? str(query.order ?? query.order_id) : str(query[k])));
-  if (!config.hmacSecret || !query.hmac || !safeEqual(sign(values), query.hmac)) return null;
+  if (!config.hmacSecret || !query.hmac || !safeEqual(sign(values, config.hmacSecret), query.hmac)) return null;
   return {
     transactionId: str(query.id),
     paymobOrderId: str(query.order ?? query.order_id),

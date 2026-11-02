@@ -1,27 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { REQUEST_STATUSES, type RequestStatus } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { formatMoney } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
-import { Badge, PageTitle } from "@/components/admin/ui";
+import { Badge, PageTitle, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { likeTerm } from "@/components/admin/people";
 import { REQUEST_BADGE } from "./badges";
 import { SlidingTabs } from "@/components/admin/motion";
 
 export const metadata: Metadata = { title: "Requests" };
 
 export default async function RequestsPage({ searchParams }: PageProps<"/admin/requests">) {
-  await requireAdmin();
+  await requireAdmin("requests.view");
   const { lang, t } = await getAdminT();
   const r = t.requests;
-  const { status } = (await searchParams) as { status?: string };
+  const { status, q = "" } = (await searchParams) as { status?: string; q?: string };
+  const term = q.trim().slice(0, 100);
+  const req = schema.serviceRequests;
   const filter = REQUEST_STATUSES.includes(status as RequestStatus) ? (status as RequestStatus) : null;
   const rows = await db
     .select()
     .from(schema.serviceRequests)
-    .where(filter ? eq(schema.serviceRequests.status, filter) : undefined)
+    .where(and(
+      filter ? eq(req.status, filter) : undefined,
+      term ? sql`(${req.number} LIKE ${likeTerm(term)} ESCAPE '\\' OR ${req.name} LIKE ${likeTerm(term)} ESCAPE '\\' OR ${req.email} LIKE ${likeTerm(term)} ESCAPE '\\' OR ${req.phone} LIKE ${likeTerm(term)} ESCAPE '\\')` : undefined,
+    ))
     .orderBy(desc(schema.serviceRequests.createdAt));
   const counts = new Map(
     (await db.select({ status: schema.serviceRequests.status, n: count() }).from(schema.serviceRequests).groupBy(schema.serviceRequests.status)).map((x) => [x.status, x.n]),
@@ -41,6 +47,11 @@ export default async function RequestsPage({ searchParams }: PageProps<"/admin/r
           ]}
         />
       </div>
+      <form className="mb-4 flex flex-wrap items-center gap-2">
+        {filter && <input type="hidden" name="status" value={filter} />}
+        <input type="search" name="q" defaultValue={term} aria-label={r.search} placeholder={r.search} className={`${inputCls} max-w-sm`} />
+        <button className={btnSecondaryCls}>{t.common.filter}</button>
+      </form>
       <div className="overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
         <table className="w-full text-sm">
           <thead className="border-b border-zinc-100 bg-zinc-50/70 text-xs font-medium tracking-wide text-zinc-500 uppercase rtl:tracking-normal">

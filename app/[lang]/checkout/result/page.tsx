@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import Button from "@/components/Button";
-import { applyPaymobTransaction } from "@/lib/orders";
+import { verifyAmwalCallback } from "@/lib/amwalpay";
+import { applyAmwalTransaction, applyPaymobTransaction } from "@/lib/orders";
 import { verifyResponseCallback } from "@/lib/paymob";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, localizeHref } from "@/lib/i18n/config";
@@ -26,8 +27,15 @@ export default async function CheckoutResultPage({ params, searchParams }: PageP
   let status: "paid" | "failed" | "received" | "invalid" = "invalid";
   let number: string | null = null;
 
-  if (query.hmac) {
-    const tx = verifyResponseCallback(query);
+  if (query.secureHashValue) {
+    const tx = await verifyAmwalCallback(query);
+    const order = tx && (await applyAmwalTransaction(tx));
+    if (order) {
+      number = order.number;
+      status = order.status === "paid" ? "paid" : "failed";
+    }
+  } else if (query.hmac) {
+    const tx = await verifyResponseCallback(query);
     const order = tx && (await applyPaymobTransaction(tx));
     if (order) {
       number = order.number;

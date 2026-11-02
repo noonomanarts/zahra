@@ -15,8 +15,6 @@ export default function CurrencyPanel({ settings, sourceUrl }: { settings: Curre
   const [fetchState, fetchAction, fetching] = useActionState<CurrencyState>(fetchRates, {});
   const [approveState, approveAction, approving] = useActionState<CurrencyState>(approveRates, {});
   const [saveState, saveAction, saving] = useActionState<CurrencyState, FormData>(saveRates, {});
-  const dateFmt = new Intl.DateTimeFormat(lang === "ar" ? "ar-OM-u-nu-latn" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Muscat" });
-  const when = (iso: string | null | undefined) => (iso ? dateFmt.format(new Date(iso)) : c.never);
   const pending = settings.pending;
 
   const change = (code: CurrencyCode) => {
@@ -39,12 +37,7 @@ export default function CurrencyPanel({ settings, sourceUrl }: { settings: Curre
           <form action={approveAction}>
             <button disabled={!pending || approving} className={btnCls}>{c.approve}</button>
           </form>
-          <dl className="ms-auto grid grid-cols-[auto_auto] gap-x-3 text-xs text-zinc-500">
-            <dt>{c.lastFetched}</dt><dd>{when(pending?.fetchedAt)}</dd>
-            <dt>{c.lastApproved}</dt><dd>{when(settings.approvedAt)}</dd>
-            <dt>{c.source}</dt>
-            <dd><a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-zinc-900">Bank Muscat ↗</a></dd>
-          </dl>
+          <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="ms-auto text-xs text-zinc-500 underline hover:text-zinc-900">Bank Muscat ↗</a>
         </div>
         <div className="mt-3 space-y-2">
           <FormMessage state={fetchState} />

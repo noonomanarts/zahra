@@ -5,16 +5,21 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { ORDER_STATUSES } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { formatMoney, isCurrency } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { LOCALE_NAMES, isLocale } from "@/lib/i18n/config";
-import { Badge, Card, PageTitle, btnCls, inputCls } from "@/components/admin/ui";
+import { Badge, Card, PageTitle, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { Icon } from "@/components/admin/icons";
+import { getAdminDictionary } from "@/lib/i18n/admin";
+import { customerWhatsapp, whatsappUrl } from "@/lib/whatsapp";
 import { updateOrderStatus } from "../actions";
 
 export const metadata: Metadata = { title: "Order" };
 
 export default async function OrderPage({ params }: PageProps<"/admin/orders/[id]">) {
-  await requireAdmin();
+  const admin = await requireAdmin("orders.view");
+  const editable = can(admin.permissions, "orders.manage");
   const { lang, t } = await getAdminT();
   const o = t.orders;
   const id = Number((await params).id);
@@ -28,6 +33,10 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
       ? `${order.displayCurrency} · ≈ ${formatMoney(order.total * order.displayRate, order.displayCurrency, lang)}`
       : "OMR";
 
+  // written in the language the customer ordered in
+  const customerT = getAdminDictionary(order.locale === "ar" ? "ar" : "en");
+  const whatsapp = whatsappUrl(customerWhatsapp(order.phone), customerT.orders.whatsappMessage(order.customerName, order.number, customerT.status[order.status]));
+
   const info = (label: string, value: React.ReactNode, ltr = false) =>
     value ? (
       <div className="flex justify-between gap-4 py-1.5">
@@ -38,7 +47,13 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
   return (
     <>
-      <PageTitle title={o.orderNo(order.number)} back="/admin/orders" backLabel={t.common.back} actions={<Badge status={order.status} label={t.status[order.status]} />} />
+      <PageTitle title={o.orderNo(order.number)} back="/admin/orders" backLabel={t.common.back} actions={
+        <>
+          {whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer" className={btnSecondaryCls}><Icon name="requests" size={16} /> {o.whatsapp}</a>}
+          {order.customerId && can(admin.permissions, "customers.view") && <Link href={`/admin/customers/${order.customerId}`} className={btnSecondaryCls}><Icon name="users" size={16} /> {o.openCustomer}</Link>}
+          <Badge status={order.status} label={t.status[order.status]} />
+        </>
+      } />
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <Card title={o.items}>
@@ -59,6 +74,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
             <dl className="mt-4 border-t border-zinc-200 pt-3 text-sm">
               {info(o.subtotal, money(order.subtotal))}
               {info(o.shipping, money(order.shipping))}
+              {order.discount > 0 && info(order.couponCode ? o.discountCode(order.couponCode) : o.discount, <>−{money(order.discount)}</>)}
               <div className="flex justify-between pt-2 font-semibold"><dt>{o.total}</dt><dd>{money(order.total)}</dd></div>
             </dl>
           </Card>
@@ -78,24 +94,29 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
 
         <div className="space-y-6">
           <Card title={o.status}>
-            <form action={updateOrderStatus} className="flex gap-2">
-              <input type="hidden" name="id" value={order.id} />
-              <select name="status" defaultValue={order.status} className={inputCls}>
-                {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t.status[s]}</option>)}
-              </select>
-              <button className={btnCls}>{t.common.update}</button>
-            </form>
+            {editable ? (
+              <form action={updateOrderStatus} className="flex gap-2">
+                <input type="hidden" name="id" value={order.id} />
+                <select name="status" defaultValue={order.status} className={inputCls}>
+                  {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t.status[s]}</option>)}
+                </select>
+                <button className={btnCls}>{t.common.update}</button>
+              </form>
+            ) : (
+              <Badge status={order.status} label={t.status[order.status]} />
+            )}
           </Card>
 
           <Card title={o.payment}>
             <dl className="text-sm">
               {info(o.created, dateFmt.format(order.createdAt))}
               {info(o.paidAt, order.paidAt && dateFmt.format(order.paidAt))}
+              {info(o.gateway, order.paymentGateway === "amwalpay" ? "AmwalPay" : order.paymobOrderId ? "Paymob" : null)}
               {info(o.paymobOrder, order.paymobOrderId, true)}
-              {info(o.transaction, order.paymobTransactionId, true)}
+              {info(o.transaction, order.gatewayTransactionId ?? order.paymobTransactionId, true)}
               {info(o.reference, order.paymentReference, true)}
             </dl>
-            {!order.paymobOrderId && <p className="mt-2 text-xs text-zinc-500">{o.offline}</p>}
+            {!order.paymobOrderId && !order.paymentGateway && <p className="mt-2 text-xs text-zinc-500">{o.offline}</p>}
           </Card>
         </div>
       </div>

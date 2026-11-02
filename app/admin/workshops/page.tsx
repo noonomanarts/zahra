@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { formatMoney } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { pick } from "@/lib/i18n/config";
@@ -13,7 +14,8 @@ import { Count } from "@/components/admin/motion";
 export const metadata: Metadata = { title: "Workshops" };
 
 export default async function WorkshopsPage() {
-  await requireAdmin();
+  const admin = await requireAdmin("workshops.view");
+  const editable = can(admin.permissions, "workshops.manage");
   const { lang, t } = await getAdminT();
   const w = t.workshops;
   const { list, totals } = await adminWorkshops();
@@ -27,7 +29,7 @@ export default async function WorkshopsPage() {
 
   return (
     <>
-      <PageTitle title={w.title} description={w.subtitle} actions={add} />
+      <PageTitle title={w.title} description={w.subtitle} actions={editable ? add : undefined} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label={w.stats.workshops} tone="rose" icon={<Icon name="workshops" />} value={<Count value={totals.workshops} />} hint={w.publishedOf(totals.published, totals.workshops)} />

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { slugify } from "@/lib/format";
 import { getAdminT } from "@/lib/i18n/admin-server";
@@ -20,8 +21,13 @@ const num = (v: FormDataEntryValue | null) => {
   return s === "" ? null : Number(s);
 };
 
+/** Products and workshops share these actions; each needs the access of the section it belongs to. */
+const manageKind = (kind: ProductKind | undefined) => requireAdmin(kind === "workshop" ? "workshops.manage" : "products.manage");
+
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
-  await requireAdmin();
+  const admin = await manageKind(formData.get("kind") === "workshop" ? "workshop" : "product");
+  const existingId = num(formData.get("id"));
+  if (existingId) await manageKind((await db.query.products.findFirst({ where: eq(schema.products.id, existingId), columns: { kind: true } }))?.kind);
   const { t } = await getAdminT();
   const e = t.products.errors;
   const id = num(formData.get("id"));
@@ -64,9 +70,13 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const unitCost = num(formData.get("unitCost"));
   if (unitCost !== null && (!Number.isFinite(unitCost) || unitCost < 0)) return { error: e.price };
 
+  const stock = kind === "workshop" || digital ? null : num(formData.get("stock"));
+  if (stock !== null && (!Number.isInteger(stock) || stock < 0)) return { error: e.stock };
+
   const values = {
     kind,
     unitCost,
+    stock,
     name: name.en,
     nameAr: name.ar,
     slug,
@@ -97,6 +107,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   });
   if (!productId) return { error: e.notFound };
 
+  await audit(admin, "product.saved", { type: kind, id: productId, label: name.en });
   revalidateSite();
   if (kind === "workshop") revalidatePath("/admin/workshops", "layout");
   // a new workshop continues with its lessons and files
@@ -105,8 +116,10 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 }
 
 export async function deleteProduct(formData: FormData) {
-  await requireAdmin();
-  const [removed] = await db.delete(schema.products).where(eq(schema.products.id, Number(formData.get("id")))).returning({ kind: schema.products.kind });
+  const id = Number(formData.get("id"));
+  const admin = await manageKind((await db.query.products.findFirst({ where: eq(schema.products.id, id), columns: { kind: true } }))?.kind);
+  const [removed] = await db.delete(schema.products).where(eq(schema.products.id, id)).returning({ kind: schema.products.kind, name: schema.products.name });
+  if (removed) await audit(admin, "product.deleted", { type: removed.kind, id, label: removed.name });
   revalidateSite();
   redirect(removed?.kind === "workshop" ? "/admin/workshops" : "/admin/products");
 }

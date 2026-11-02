@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { formatMoney } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { LOCALE_NAMES, isLocale } from "@/lib/i18n/config";
 import { whatsappUrl } from "@/lib/whatsapp";
-import { Badge, Card, PageTitle, btnSecondaryCls } from "@/components/admin/ui";
+import { Badge, Card, PageTitle, btnSecondaryCls, ReadOnly } from "@/components/admin/ui";
 import { REQUEST_BADGE } from "../badges";
 import RequestForm from "../RequestForm";
 
@@ -17,7 +18,8 @@ export const metadata: Metadata = { title: "Request" };
 const size = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
 
 export default async function RequestPage({ params }: PageProps<"/admin/requests/[id]">) {
-  await requireAdmin();
+  const admin = await requireAdmin("requests.view");
+  const editable = can(admin.permissions, "requests.manage");
   const { lang, t } = await getAdminT();
   const r = t.requests;
   const id = Number((await params).id);
@@ -104,7 +106,7 @@ export default async function RequestPage({ params }: PageProps<"/admin/requests
             )}
           </Card>
           <Card title={r.status}>
-            <RequestForm id={row.id} status={row.status} notes={row.adminNotes} />
+            <ReadOnly when={!editable} label={t.common.readOnly}><RequestForm id={row.id} status={row.status} notes={row.adminNotes} /></ReadOnly>
           </Card>
         </div>
       </div>

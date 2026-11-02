@@ -1,13 +1,12 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { SiteSettings } from "@/db/schema";
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { normalizeMenu, toL } from "@/lib/blocks";
 import { getSite } from "@/lib/data";
 import { getAdminT } from "@/lib/i18n/admin-server";
-import { hashPassword, verifyPassword } from "@/lib/password";
 import { revalidateSite } from "@/lib/revalidate";
 import { saveImage } from "@/lib/uploads";
 import { readL } from "@/components/admin/ui";
@@ -22,7 +21,7 @@ const lines = (v: FormDataEntryValue | null) =>
     .filter(Boolean);
 
 export async function saveSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
-  await requireAdmin();
+  const admin = await requireAdmin("settings.manage");
   const { t } = await getAdminT();
   const current = await getSite();
 
@@ -94,20 +93,7 @@ export async function saveSettings(_prev: SettingsState, formData: FormData): Pr
     printService,
   };
   await db.insert(schema.settings).values({ key: "site", value: site }).onConflictDoUpdate({ target: schema.settings.key, set: { value: site } });
+  await audit(admin, "settings.saved");
   revalidateSite();
   return { ok: t.settings.saved };
-}
-
-export async function changePassword(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
-  const admin = await requireAdmin();
-  const { t } = await getAdminT();
-  const current = String(formData.get("current") ?? "");
-  const next = String(formData.get("next") ?? "");
-  if (next.length < 10) return { error: t.settings.tooShort };
-  if (next !== String(formData.get("confirm") ?? "")) return { error: t.settings.mismatch };
-
-  const user = await db.query.adminUsers.findFirst({ where: eq(schema.adminUsers.id, admin.id) });
-  if (!user || !(await verifyPassword(current, user.passwordHash))) return { error: t.settings.wrong };
-  await db.update(schema.adminUsers).set({ passwordHash: await hashPassword(next) }).where(eq(schema.adminUsers.id, admin.id));
-  return { ok: t.settings.changed };
 }

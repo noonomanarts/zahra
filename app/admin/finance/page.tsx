@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { formatMoney } from "@/lib/currency";
 import { FINANCE_CATEGORIES, PERIODS, financeReport, muscatDay, periodRange, type Period } from "@/lib/finance";
 import { getAdminT } from "@/lib/i18n/admin-server";
-import { Card, Notice, PageTitle, Stat, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { Card, Notice, PageTitle, Stat, btnCls, btnSecondaryCls, inputCls, ReadOnly } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/icons";
 import EntryForm from "./EntryForm";
 import { Count, SlidingTabs } from "@/components/admin/motion";
@@ -13,7 +14,8 @@ import { deleteEntry } from "./actions";
 export const metadata: Metadata = { title: "Finance" };
 
 export default async function FinancePage({ searchParams }: PageProps<"/admin/finance">) {
-  await requireAdmin();
+  const admin = await requireAdmin("finance.view");
+  const editable = can(admin.permissions, "finance.manage");
   const { lang, t } = await getAdminT();
   const f = t.finance;
   const q = (await searchParams) as { p?: string; from?: string; to?: string };
@@ -149,7 +151,7 @@ export default async function FinancePage({ searchParams }: PageProps<"/admin/fi
       <div className="mt-6">
         <Card title={f.entries}>
           <h3 className="mb-3 font-sans text-sm font-semibold">{f.addEntry}</h3>
-          <EntryForm today={muscatDay(new Date())} categories={FINANCE_CATEGORIES} />
+          <ReadOnly when={!editable} label={t.common.readOnly}><EntryForm today={muscatDay(new Date())} categories={FINANCE_CATEGORIES} /></ReadOnly>
           <div className="mt-6 overflow-x-auto">
             {report.entries.length ? (
               <table className="w-full text-sm">
@@ -172,10 +174,12 @@ export default async function FinancePage({ searchParams }: PageProps<"/admin/fi
                       <td className="py-2">{e.description}</td>
                       <td className="py-2 text-end whitespace-nowrap">{money(e.amount)}</td>
                       <td className="py-2 text-end">
-                        <form action={deleteEntry}>
-                          <input type="hidden" name="id" value={e.id} />
-                          <button className="text-xs text-red-700 hover:underline">{f.remove}</button>
-                        </form>
+                        {editable && (
+                          <form action={deleteEntry}>
+                            <input type="hidden" name="id" value={e.id} />
+                            <button className="text-xs text-red-700 hover:underline">{f.remove}</button>
+                          </form>
+                        )}
                       </td>
                     </tr>
                   ))}

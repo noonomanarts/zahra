@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "New workshop" };
 
 /** Name, price and images first; saving continues on the workshop page with its lessons and files. */
 export default async function NewWorkshopPage() {
-  await requireAdmin();
+  await requireAdmin("workshops.manage");
   const { t } = await getAdminT();
   const [{ categories, tags }, skus] = await Promise.all([adminCatalogue(), skuSuggestions()]);
   return (

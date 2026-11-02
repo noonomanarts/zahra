@@ -289,7 +289,7 @@ test("customer accounts through native production HTTP forms", { timeout: 120_00
     assert.equal((await request(requestRoute, {}, impostor)).status, 403);
     assert.equal((await request("/admin/finance/export", {}, impostor)).status, 403);
     const adminToken = randomBytes(32).toString("base64url");
-    const admin = await database.execute("INSERT INTO admin_users (email,name,password_hash) VALUES ('fixture@example.test','Fixture','not-a-password') RETURNING id");
+    const admin = await database.execute("INSERT INTO admin_users (email,name,role,password_hash) VALUES ('fixture@example.test','Fixture','owner','not-a-password') RETURNING id");
     await database.execute({ sql: "INSERT INTO sessions (id,user_id,expires_at) VALUES (?,?,?)", args: [hashToken(adminToken), Number(admin.rows[0].id), Math.floor(Date.now()/1000)+3600] });
     const adminJar = new CookieJar();
     adminJar.values.set("zds_admin", adminToken);

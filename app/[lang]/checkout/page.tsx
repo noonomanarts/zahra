@@ -5,7 +5,7 @@ import { getCustomer } from "@/lib/customer-auth";
 import { getSite } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale } from "@/lib/i18n/config";
-import { paymobEnabled } from "@/lib/paymob";
+import { activeGateway } from "@/lib/payments";
 import CheckoutForm from "./CheckoutForm";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/checkout">): Promise<Metadata> {
@@ -17,12 +17,12 @@ export default async function CheckoutPage({ params }: PageProps<"/[lang]/checko
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const t = getDictionary(lang);
-  const [site, customer] = await Promise.all([getSite(), getCustomer()]);
+  const [site, customer, gateway] = await Promise.all([getSite(), getCustomer(), activeGateway()]);
   return (
     <>
       <PageHeader title={t.checkout.title} lang={lang} crumbs={[{ label: t.cart.title, href: "/cart" }]} />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <CheckoutForm shippingFee={site.shippingFee} paymentOnline={paymobEnabled()} customer={customer && { name: customer.name, email: customer.email }} />
+        <CheckoutForm shippingFee={site.shippingFee} paymentOnline={Boolean(gateway)} customer={customer && { name: customer.name, email: customer.email }} />
       </div>
     </>
   );

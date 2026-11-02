@@ -94,11 +94,14 @@ export default function ProductForm({ product, categories, tags, notice, kind = 
               <Field label={p.regularPrice} hint={p.regularHint}>
                 <input name="regularPrice" type="number" dir="ltr" step="0.001" min="0" defaultValue={product?.regularPrice ?? ""} className={inputCls} />
               </Field>
-              <div className="sm:col-span-2">
-                <Field label={p.unitCost} hint={p.unitCostHint}>
-                  <input name="unitCost" type="number" dir="ltr" step="0.001" min="0" defaultValue={product?.unitCost ?? ""} className={`${inputCls} sm:max-w-[calc(50%-0.5rem)]`} />
+              <Field label={p.unitCost} hint={p.unitCostHint}>
+                <input name="unitCost" type="number" dir="ltr" step="0.001" min="0" defaultValue={product?.unitCost ?? ""} className={inputCls} />
+              </Field>
+              {kind === "product" && !digital && (
+                <Field label={p.stock} hint={p.stockHint}>
+                  <input name="stock" type="number" dir="ltr" step="1" min="0" defaultValue={product?.stock ?? ""} className={inputCls} />
                 </Field>
-              </div>
+              )}
             </div>
           </div>
         </Card>

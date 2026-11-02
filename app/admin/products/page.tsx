@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { adminCatalogue } from "@/lib/data";
 import { formatMoney } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
@@ -11,10 +12,11 @@ import { Badge, PageTitle, btnCls, inputCls } from "@/components/admin/ui";
 export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage({ searchParams }: PageProps<"/admin/products">) {
-  await requireAdmin();
+  const admin = await requireAdmin("products.view");
+  const editable = can(admin.permissions, "products.manage");
   const { lang, t } = await getAdminT();
   const p = t.products;
-  const { q = "", category = "", missing = "" } = (await searchParams) as { q?: string; category?: string; missing?: string };
+  const { q = "", category = "", missing = "", stock = "" } = (await searchParams) as { q?: string; category?: string; missing?: string; stock?: string };
   const { products, categories } = await adminCatalogue();
   const term = q.toLowerCase();
   // workshops have their own section
@@ -23,13 +25,14 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
       x.kind !== "workshop" &&
       (!term || x.name.toLowerCase().includes(term) || x.nameAr.includes(q) || x.sku?.toLowerCase().includes(term)) &&
       (!category || x.categories.includes(category)) &&
-      (missing !== "ar" || !x.nameAr || !x.descriptionAr),
+      (missing !== "ar" || !x.nameAr || !x.descriptionAr) &&
+      (stock !== "low" || (x.stock !== null && x.stock <= 3)),
   );
   const catName = new Map(categories.map((c) => [c.slug, pick({ en: c.name, ar: c.nameAr }, lang)]));
 
   return (
     <>
-      <PageTitle title={p.title(list.length)} actions={<Link href="/admin/products/new" className={btnCls}>{p.add}</Link>} />
+      <PageTitle title={p.title(list.length)} actions={editable ? <Link href="/admin/products/new" className={btnCls}>{p.add}</Link> : undefined} />
 
       <form className="mb-4 flex flex-wrap items-center gap-2">
         <input name="q" defaultValue={q} placeholder={p.search} className={`${inputCls} max-w-xs`} />
@@ -71,7 +74,8 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap gap-1">
                     <Badge status={x.published ? "published" : "draft"} label={t.status[x.published ? "published" : "draft"]} />
-                    {!x.inStock && <Badge status="outOfStock" label={t.status.outOfStock} />}
+                    {(!x.inStock || x.stock === 0) && <Badge status="outOfStock" label={t.status.outOfStock} />}
+                    {x.stock !== null && x.stock > 0 && <span className={`text-xs whitespace-nowrap ${x.stock <= 3 ? "font-medium text-amber-700" : "text-zinc-500"}`}>{p.stockCount(x.stock)}</span>}
                     {(!x.nameAr || !x.descriptionAr) && <Badge status="warning" label={t.common.missingArabic} />}
                   </div>
                 </td>

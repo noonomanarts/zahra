@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { revalidateSite } from "@/lib/revalidate";
@@ -20,7 +21,7 @@ async function findWorkshop(id: number) {
 
 /** Lessons (YouTube links, in order) and the private downloads of one workshop. */
 export async function saveWorkshopContent(_prev: ContentState, formData: FormData): Promise<ContentState> {
-  await requireAdmin();
+  const admin = await requireAdmin("workshops.manage");
   const { t } = await getAdminT();
   const e = t.workshops.errors;
   const workshop = await findWorkshop(Number(formData.get("id")));
@@ -64,6 +65,7 @@ export async function saveWorkshopContent(_prev: ContentState, formData: FormDat
   await db.update(schema.products).set({ workshopVideos: videos, workshopFiles: all }).where(eq(schema.products.id, workshop.id));
   await Promise.all(removed.map((f) => deletePrivateFile(f.file)));
 
+  await audit(admin, "workshop.content_saved", { type: "workshop", id: workshop.id, label: workshop.name });
   revalidateSite();
   revalidatePath("/admin/workshops", "layout");
   return { ok: t.workshops.saved, files: all, at: Date.now() };
@@ -71,7 +73,7 @@ export async function saveWorkshopContent(_prev: ContentState, formData: FormDat
 
 /** Access given by hand (paid in person, gift, replacement…). */
 export async function grantWorkshop(_prev: GrantState, formData: FormData): Promise<GrantState> {
-  await requireAdmin();
+  const admin = await requireAdmin("workshops.manage");
   const { t } = await getAdminT();
   const w = t.workshops;
   const workshop = await findWorkshop(Number(formData.get("productId")));
@@ -84,24 +86,28 @@ export async function grantWorkshop(_prev: GrantState, formData: FormData): Prom
     .values({ customerId: customer.id, productId: workshop.id })
     .onConflictDoNothing()
     .returning({ id: schema.workshopGrants.customerId });
+  if (added.length) await audit(admin, "workshop.access_granted", { type: "workshop", id: workshop.id, label: `${workshop.name} → ${customer.email}` });
   revalidatePath("/admin/workshops", "layout");
   return added.length ? { ok: w.granted(customer.name) } : { ok: w.already(customer.name) };
 }
 
 /** One-click access for a paid guest order whose email matches a customer account. */
 export async function linkGuestOrder(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin("workshops.manage");
   const workshop = await findWorkshop(Number(formData.get("productId")));
   const customerId = Number(formData.get("customerId"));
   if (!workshop || !Number.isInteger(customerId)) return;
   await db.insert(schema.workshopGrants).values({ customerId, productId: workshop.id }).onConflictDoNothing();
+  await audit(admin, "workshop.access_granted", { type: "workshop", id: workshop.id, label: workshop.name });
   revalidatePath("/admin/workshops", "layout");
 }
 
 export async function revokeWorkshop(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin("workshops.manage");
   await db
     .delete(schema.workshopGrants)
     .where(and(eq(schema.workshopGrants.productId, Number(formData.get("productId"))), eq(schema.workshopGrants.customerId, Number(formData.get("customerId")))));
+  const former = await db.query.customers.findFirst({ where: eq(schema.customers.id, Number(formData.get("customerId"))), columns: { email: true } });
+  await audit(admin, "workshop.access_revoked", { type: "workshop", id: Number(formData.get("productId")), label: former?.email ?? String(formData.get("customerId")) });
   revalidatePath("/admin/workshops", "layout");
 }

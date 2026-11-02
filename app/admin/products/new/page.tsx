@@ -10,7 +10,7 @@ import ProductForm from "../ProductForm";
 export const metadata: Metadata = { title: "New product" };
 
 export default async function NewProductPage({ searchParams }: PageProps<"/admin/products/new">) {
-  await requireAdmin();
+  await requireAdmin("products.manage");
   // workshops are created in their own section
   if ((await searchParams).kind === "workshop") redirect("/admin/workshops/new");
   const { t } = await getAdminT();

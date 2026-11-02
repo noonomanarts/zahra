@@ -8,7 +8,13 @@ import AddToCartButton from "@/components/cart/AddToCartButton";
 import { Price, ProductGrid } from "@/components/ProductCard";
 import { WorkshopMeta } from "@/components/workshops/WorkshopCard";
 import { DEPARTMENTS, WORKSHOPS_PATH, sectionHref } from "@/lib/catalog";
+import JsonLd from "@/components/JsonLd";
+import { and, eq } from "drizzle-orm";
+import { db, schema } from "@/db";
+import ProductReviews, { Stars } from "@/components/ProductReviews";
+import { canReview, productReviews } from "@/lib/reviews";
 import { getCustomer } from "@/lib/customer-auth";
+import { absoluteUrl, plainText } from "@/lib/seo";
 import { getCategory, getProduct, getProducts, getTag, listProducts } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, localizeHref, pick, type Locale } from "@/lib/i18n/config";
@@ -39,7 +45,8 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/products/[
   return product
     ? {
         title: product.name,
-        openGraph: { images: product.images.slice(0, 1) },
+        description: plainText(product.description, 160) || undefined,
+        openGraph: { images: product.images.slice(0, 1), description: plainText(product.description, 160) || undefined },
         alternates: { languages: { en: `/en/products/${slug}`, ar: `/ar/products/${slug}` } },
       }
     : {};
@@ -60,18 +67,54 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/product
     getCustomer(),
   ]);
   const isWorkshop = product.kind === "workshop";
+  const [reviewData, mayReview, ownReview] = await Promise.all([
+    productReviews(product.id),
+    customer ? canReview(customer.id, product.id, product.kind) : false,
+    customer ? db.query.productReviews.findFirst({ where: and(eq(schema.productReviews.productId, product.id), eq(schema.productReviews.customerId, customer.id)) }) : undefined,
+  ]);
   const owned = isWorkshop && !!customer && (await ownsWorkshop(customer.id, product.id));
   // Arabic description missing → the English one is shown left-to-right
   const descriptionIsEnglish = lang === "ar" && /^[^؀-ۿ]*$/.test(product.description.replace(/<[^>]+>/g, ""));
 
   return (
     <>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            description: plainText(product.description, 500) || undefined,
+            sku: product.sku ?? undefined,
+            image: product.images.map(absoluteUrl),
+            ...(reviewData.count ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewData.average, reviewCount: reviewData.count, bestRating: 5, worstRating: 1 } } : {}),
+            offers: {
+              "@type": "Offer",
+              url: absoluteUrl(`/${lang}/products/${product.slug}`),
+              price: product.price,
+              priceCurrency: product.currency,
+              availability: `https://schema.org/${product.inStock ? "InStock" : "OutOfStock"}`,
+            },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [...crumbs, { label: product.name, href: `/products/${product.slug}` }].map((c, i) => ({
+              "@type": "ListItem",
+              position: i + 1,
+              name: c.label,
+              item: absoluteUrl(localizeHref(lang, c.href)),
+            })),
+          },
+        ]}
+      />
       <PageHeader title={product.name} lang={lang} crumbs={crumbs} />
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-12 sm:px-6 lg:grid-cols-2">
         <ProductGallery images={product.images} alt={product.name} />
 
         <div>
           <Price product={product} className="text-2xl" />
+          {reviewData.count > 0 && <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm text-muted hover:text-brand-dark"><Stars rating={reviewData.average} /> {reviewData.average} ({reviewData.count})</a>}
           {isWorkshop ? (
             <div className="mt-6 rounded-2xl bg-brand-soft/60 p-5">
               <p className="text-sm font-semibold">{t.workshops.includes}</p>
@@ -83,7 +126,7 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/product
             </div>
           ) : (
             <p className="mt-3 text-sm text-muted">
-              {product.digital ? t.product.digitalNote : product.inStock ? t.product.inStock : t.product.outOfStock}
+              {product.digital ? t.product.digitalNote : !product.inStock ? t.product.outOfStock : product.stock !== null && product.stock <= 5 ? t.product.stockLeft(product.stock) : t.product.inStock}
             </p>
           )}
 
@@ -146,6 +189,8 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/product
           )}
         </div>
       </div>
+
+      <ProductReviews lang={lang} productId={product.id} data={reviewData} signedIn={Boolean(customer)} mayReview={mayReview} own={ownReview ? { rating: ownReview.rating, body: ownReview.body, status: ownReview.status } : null} />
 
       {related.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6">

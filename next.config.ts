@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/:lang(en|ar)/:page(account|login|register)",
+        source: "/:lang(en|ar)/:page(account|login|register|forgot-password|reset-password)",
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
       {

@@ -15,6 +15,12 @@ export function whatsappUrl(digits: string, text?: string) {
   return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
 }
 
+/** A customer's number as wa.me needs it; numbers typed without a country code are taken to be Omani. */
+export function customerWhatsapp(phone: string) {
+  const digits = phone.replace(/\D/g, "").replace(/^00/, "");
+  return digits.length === 8 ? `968${digits}` : digits;
+}
+
 /** Replaces broken WhatsApp short links in a URL or an HTML string with a link to the number. */
 export function fixWhatsappLinks(html: string, digits: string) {
   return digits ? html.replace(SHORT_LINK, `https://wa.me/${digits}`) : html;

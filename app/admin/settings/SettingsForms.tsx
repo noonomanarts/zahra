@@ -6,7 +6,7 @@ import type { PrintServiceSettings, SiteSettings } from "@/db/schema";
 import { useAdminI18n } from "@/components/admin/AdminI18n";
 import { Card, Field, FormMessage, LField, btnCls, btnDangerCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
 import { LabelInputs, MenuItems } from "./MenuEditor";
-import { changePassword, saveSettings, type SettingsState } from "./actions";
+import { saveSettings, type SettingsState } from "./actions";
 
 export function SiteSettingsForm({ site, printService }: { site: SiteSettings; printService: PrintServiceSettings }) {
   const { t } = useAdminI18n();
@@ -103,22 +103,5 @@ export function SiteSettingsForm({ site, printService }: { site: SiteSettings; p
         <FormMessage state={state} />
       </div>
     </form>
-  );
-}
-
-export function PasswordForm() {
-  const { t } = useAdminI18n();
-  const s = t.settings;
-  const [state, action, pending] = useActionState<SettingsState, FormData>(changePassword, {});
-  return (
-    <Card title={s.password}>
-      <form action={action} className="grid max-w-md gap-4">
-        <Field label={s.current}><input name="current" type="password" dir="ltr" required autoComplete="current-password" className={inputCls} /></Field>
-        <Field label={s.next} hint={s.nextHint}><input name="next" type="password" dir="ltr" required minLength={10} autoComplete="new-password" className={inputCls} /></Field>
-        <Field label={s.repeat}><input name="confirm" type="password" dir="ltr" required autoComplete="new-password" className={inputCls} /></Field>
-        <FormMessage state={state} />
-        <button disabled={pending} className={`${btnCls} w-fit`}>{pending ? t.common.saving : s.change}</button>
-      </form>
-    </Card>
   );
 }

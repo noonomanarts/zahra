@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
-import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { Block, L, MenuItem, WorkshopFile, WorkshopVideo } from "@/lib/types";
 import type { CurrencyCode } from "@/lib/currency";
+import type { AdminRole, PermissionMap } from "@/lib/permissions";
 
 const timestamps = {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
@@ -38,6 +39,8 @@ export const products = sqliteTable(
     kind: text("kind", { enum: PRODUCT_KINDS }).notNull().default("product"),
     /** what one unit costs the studio (materials, printing…), used by the finance report */
     unitCost: real("unit_cost"),
+    /** pieces on hand; null means the studio doesn't count this product, only the in-stock switch applies */
+    stock: integer("stock"),
     workshopVideos: text("workshop_videos", { mode: "json" }).$type<WorkshopVideo[]>().notNull().default([]),
     workshopFiles: text("workshop_files", { mode: "json" }).$type<WorkshopFile[]>().notNull().default([]),
     ...timestamps,
@@ -163,7 +166,15 @@ export const orders = sqliteTable(
     paymobIntentionId: text("paymob_intention_id"),
     paymobOrderId: text("paymob_order_id"),
     paymobTransactionId: text("paymob_transaction_id"),
+    /** which gateway took this order's payment; older orders are Paymob when they have a Paymob id */
+    paymentGateway: text("payment_gateway"),
+    gatewayTransactionId: text("gateway_transaction_id"),
     paidAt: integer("paid_at", { mode: "timestamp" }),
+    /** products pay before shipping: subtotal − discount + shipping = total */
+    discount: real("discount").notNull().default(0),
+    couponCode: text("coupon_code"),
+    /** the order currently holds its pieces of counted stock */
+    stockReserved: integer("stock_reserved", { mode: "boolean" }).notNull().default(false),
     // set when the customer was signed in at checkout (required for workshops)
     customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
     ...timestamps,
@@ -188,6 +199,44 @@ export const orderItems = sqliteTable("order_items", {
   unitCost: real("unit_cost"),
 });
 
+// ---------- coupons ----------
+
+export const COUPON_TYPES = ["percent", "fixed"] as const;
+export type CouponType = (typeof COUPON_TYPES)[number];
+
+export const coupons = sqliteTable("coupons", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  code: text("code").notNull().unique(), // upper case
+  type: text("type", { enum: COUPON_TYPES }).notNull(),
+  value: real("value").notNull(), // percent, or OMR
+  minSubtotal: real("min_subtotal"),
+  maxUses: integer("max_uses"),
+  oncePerCustomer: integer("once_per_customer", { mode: "boolean" }).notNull().default(false),
+  startsOn: text("starts_on"), // YYYY-MM-DD (Muscat)
+  endsOn: text("ends_on"), // last valid day
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  ...timestamps,
+});
+
+// ---------- product reviews ----------
+
+export const REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
+
+export const productReviews = sqliteTable(
+  "product_reviews",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    productId: integer("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+    customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),
+    body: text("body").notNull(),
+    status: text("status", { enum: REVIEW_STATUSES }).notNull().default("pending"),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("product_reviews_once_idx").on(t.productId, t.customerId), index("product_reviews_status_idx").on(t.status)],
+);
+
 // ---------- admin auth ----------
 
 export const adminUsers = sqliteTable("admin_users", {
@@ -195,6 +244,16 @@ export const adminUsers = sqliteTable("admin_users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
+  /** access level, see lib/permissions.ts; the lowest role is the default so a missing value never grants more */
+  role: text("role").$type<AdminRole>().notNull().default("viewer"),
+  /** section levels of the "custom" role, ignored by the built-in roles */
+  permissions: text("permissions", { mode: "json" }).$type<PermissionMap>(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  /** set on temporary passwords: nothing else opens until the user chooses their own */
+  mustChangePassword: integer("must_change_password", { mode: "boolean" }).notNull().default(false),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp" }),
+  passwordChangedAt: integer("password_changed_at", { mode: "timestamp" }),
   ...timestamps,
 });
 
@@ -202,7 +261,29 @@ export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(), // sha256 of the cookie token
   userId: integer("user_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp" }),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
 });
+
+/** Sign-ins and changes to people and access. The actor's email is copied so entries outlive deleted users. */
+export const adminAuditLog = sqliteTable(
+  "admin_audit_log",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    actorId: integer("actor_id").references(() => adminUsers.id, { onDelete: "set null" }),
+    actorEmail: text("actor_email").notNull(),
+    action: text("action").notNull(),
+    targetType: text("target_type"),
+    targetId: integer("target_id"),
+    targetLabel: text("target_label"),
+    details: text("details", { mode: "json" }).$type<Record<string, string>>(),
+    ip: text("ip"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [index("admin_audit_log_created_idx").on(t.createdAt), index("admin_audit_log_actor_idx").on(t.actorId)],
+);
 
 // ---------- customer auth (separate from administrator access) ----------
 
@@ -211,6 +292,9 @@ export const customers = sqliteTable("customers", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
+  /** set while the studio has suspended the account: sign-in is refused */
+  disabledAt: integer("disabled_at", { mode: "timestamp" }),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
   ...timestamps,
 });
 
@@ -222,6 +306,17 @@ export const customerSessions = sqliteTable(
     expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   },
   (t) => [index("customer_sessions_expiry_idx").on(t.expiresAt)],
+);
+
+/** One-time password links an administrator hands to a customer; only the sha256 of the token is stored. */
+export const customerPasswordResets = sqliteTable(
+  "customer_password_resets",
+  {
+    id: text("id").primaryKey(),
+    customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  },
+  (t) => [index("customer_password_resets_customer_idx").on(t.customerId)],
 );
 
 /** Workshop access given by the studio without an online order (e.g. paid in person). */

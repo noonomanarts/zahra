@@ -4,12 +4,13 @@ import type { Customer } from "@/lib/customer-auth";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { localizeHref, type Locale } from "@/lib/i18n/config";
 
-type Tab = "overview" | "workshops" | "orders";
+type Tab = "overview" | "workshops" | "orders" | "profile";
 
 const ICONS: Record<Tab, React.ReactNode> = {
   overview: <path d="M4 13h6V4H4v9Zm10 7h6v-9h-6v9ZM4 20h6v-4H4v4Zm10-16v4h6V4h-6Z" />,
   workshops: <path d="M10 8.5v7l6-3.5-6-3.5ZM3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6Z" />,
   orders: <path d="M6 7h12l-1 13H7L6 7Zm3 0a3 3 0 0 1 6 0" />,
+  profile: <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9v-1a8 8 0 0 1 16 0v1" />,
 };
 
 /** Header band and tab bar shared by every page of the customer account. */
@@ -20,6 +21,7 @@ export default function AccountShell({ lang, customer, active, children }: { lan
     { key: "overview", label: a.overview, href: "/account" },
     { key: "workshops", label: a.workshops, href: "/account/workshops" },
     { key: "orders", label: a.orders, href: "/account/orders" },
+    { key: "profile", label: a.profile, href: "/account/profile" },
   ];
   const initials = customer.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 

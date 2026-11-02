@@ -1,3 +1,4 @@
+import { effectiveInStock } from "./format";
 import "server-only";
 import { cache } from "react";
 import { asc, eq } from "drizzle-orm";
@@ -72,7 +73,8 @@ function localizeProduct(p: RawProduct, lang: Locale): Product {
     currency: p.currency,
     price: p.price,
     regularPrice: p.regularPrice,
-    inStock: p.inStock,
+    inStock: effectiveInStock(p),
+    stock: p.stock,
     digital: p.digital,
     published: p.published,
     images: p.images,
@@ -110,7 +112,7 @@ export async function listShopProducts(lang: Locale) {
 export async function newArrivals(lang: Locale, limit = 6) {
   const { products } = await loadCatalogue();
   return products
-    .filter((p) => p.published && p.inStock)
+    .filter((p) => p.published && effectiveInStock(p))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id)
     .slice(0, Math.min(Math.max(Math.round(limit) || 6, 1), 12))
     .map((p) => localizeProduct(p, lang));

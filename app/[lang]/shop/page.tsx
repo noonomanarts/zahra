@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
-import { ProductGrid } from "@/components/ProductCard";
+import ShopBrowser from "@/components/shop/ShopBrowser";
 import { DEPARTMENTS, SECTION_CATEGORIES, WORKSHOPS_LABEL, WORKSHOPS_PATH } from "@/lib/catalog";
 import { listCategories, listShopProducts } from "@/lib/data";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -25,8 +25,8 @@ export default async function ShopPage({ params }: PageProps<"/[lang]/shop">) {
     ...DEPARTMENTS.map((d) => ({ label: d.label, href: `/${d.slug}`, intro: d.intro })),
     { label: WORKSHOPS_LABEL, href: WORKSHOPS_PATH, intro: { en: getDictionary("en").workshops.lead, ar: getDictionary("ar").workshops.lead } },
   ];
-  // available products first
-  const sorted = [...products].sort((a, b) => Number(b.inStock) - Number(a.inStock));
+  // only what the cards and the search need: descriptions would make this page several times heavier
+  const light = products.map((p) => ({ ...p, description: "" }));
 
   return (
     <>
@@ -59,8 +59,7 @@ export default async function ShopPage({ params }: PageProps<"/[lang]/shop">) {
         )}
       </PageHeader>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <p className="mb-8 text-muted">{t.catalog.productsCount(products.length)}</p>
-        <ProductGrid products={sorted} lang={lang} />
+        <ShopBrowser products={light} lang={lang} />
       </div>
     </>
   );

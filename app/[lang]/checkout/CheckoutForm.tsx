@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import Money from "@/components/Money";
 import { useCart } from "@/components/cart/CartProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useI18n } from "@/components/providers/I18nProvider";
 import { formatMoney } from "@/lib/currency";
 import { pick } from "@/lib/i18n/config";
-import { checkout, type CheckoutState } from "./actions";
+import { checkout, previewCoupon, type CheckoutState } from "./actions";
 
 const field = "w-full rounded-xl border border-line bg-white px-4 py-3 outline-none transition focus:border-brand";
 
@@ -21,6 +21,10 @@ export default function CheckoutForm({ shippingFee, paymentOnline, customer }: {
   const { lang, t, href } = useI18n();
   const { currency } = useCurrency();
   const [state, action, pending] = useActionState<CheckoutState, FormData>(checkout, {});
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [checking, startChecking] = useTransition();
 
   useEffect(() => {
     if (state.redirectTo) window.location.assign(state.redirectTo);
@@ -38,7 +42,19 @@ export default function CheckoutForm({ shippingFee, paymentOnline, customer }: {
 
   const needsShipping = items.some((i) => !i.digital);
   const shipping = needsShipping ? shippingFee : 0;
-  const total = subtotal + shipping;
+  const discount = coupon?.discount ?? 0;
+  const total = Math.max(subtotal + shipping - discount, 0);
+  const applyCoupon = (form: HTMLFormElement | null) =>
+    startChecking(async () => {
+      setCouponError(null);
+      const email = String(new FormData(form ?? undefined).get("email") ?? "");
+      const result = await previewCoupon(couponInput, items.map((i) => ({ slug: i.slug, quantity: i.quantity })), email);
+      if ("problem" in result) setCouponError(t.checkout.couponProblems[result.problem]);
+      else {
+        setCoupon(result);
+        setCouponInput("");
+      }
+    });
   const v = state.values ?? {};
   const needsLogin = !customer && items.some((i) => i.workshop);
   const next = `?next=${encodeURIComponent(href("/checkout"))}`;
@@ -48,6 +64,7 @@ export default function CheckoutForm({ shippingFee, paymentOnline, customer }: {
       <input type="hidden" name="items" value={JSON.stringify(items.map((i) => ({ slug: i.slug, quantity: i.quantity })))} />
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="currency" value={currency} />
+      <input type="hidden" name="coupon" value={coupon?.code ?? ""} />
 
       <div className="space-y-8">
         {needsLogin && (
@@ -90,6 +107,30 @@ export default function CheckoutForm({ shippingFee, paymentOnline, customer }: {
             </li>
           ))}
         </ul>
+        <div className="mt-4 border-t border-brand/15 pt-4">
+          {coupon ? (
+            <p className="flex items-center justify-between gap-3 rounded-xl bg-white/70 px-3 py-2 text-sm">
+              <span>{t.checkout.couponApplied} <strong dir="ltr">{coupon.code}</strong></span>
+              <button type="button" onClick={() => setCoupon(null)} className="text-xs text-muted underline underline-offset-2">{t.checkout.couponRemove}</button>
+            </p>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (couponInput.trim()) applyCoupon(e.currentTarget.form); } }}
+                aria-label={t.checkout.couponLabel}
+                placeholder={t.checkout.couponLabel}
+                dir="ltr"
+                autoComplete="off"
+                maxLength={40}
+                className={`${field} min-w-0 flex-1 py-2.5 text-sm uppercase placeholder:normal-case rtl:text-right`}
+              />
+              <button type="button" disabled={checking || !couponInput.trim()} onClick={(e) => applyCoupon(e.currentTarget.form)} className="rounded-xl border border-brand-dark/30 bg-white px-4 text-sm text-brand-dark transition hover:bg-brand-soft disabled:opacity-50">{t.checkout.couponApply}</button>
+            </div>
+          )}
+          {couponError && <p role="alert" className="mt-2 text-xs text-red-700">{couponError}</p>}
+        </div>
         <dl className="mt-4 space-y-2 border-t border-brand/15 pt-4 text-sm">
           <div className="flex justify-between"><dt>{t.checkout.subtotal}</dt><dd><Money amount={subtotal} /></dd></div>
           {needsShipping && (
@@ -98,6 +139,7 @@ export default function CheckoutForm({ shippingFee, paymentOnline, customer }: {
               <dd>{shipping ? <Money amount={shipping} /> : t.checkout.free}</dd>
             </div>
           )}
+          {discount > 0 && <div className="flex justify-between text-emerald-800"><dt>{t.checkout.discount}</dt><dd>−<Money amount={discount} /></dd></div>}
           <div className="flex justify-between pt-2 text-base font-bold"><dt>{t.checkout.total}</dt><dd><Money amount={total} /></dd></div>
         </dl>
         {currency !== "OMR" && (

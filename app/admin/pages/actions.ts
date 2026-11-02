@@ -2,6 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { audit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { normalizeBlock } from "@/lib/blocks";
 import { getAdminT } from "@/lib/i18n/admin-server";
@@ -13,7 +14,7 @@ import { readL } from "@/components/admin/ui";
 export type PageFormState = { error?: string; ok?: string; blocks?: Block[] };
 
 export async function savePage(_prev: PageFormState, formData: FormData): Promise<PageFormState> {
-  await requireAdmin();
+  const admin = await requireAdmin("pages.manage");
   const { t } = await getAdminT();
   const slug = String(formData.get("slug"));
   const title = readL(formData, "title");
@@ -47,6 +48,7 @@ export async function savePage(_prev: PageFormState, formData: FormData): Promis
     .update(schema.pages)
     .set({ title: title.en, titleAr: title.ar, description: description.en || null, descriptionAr: description.ar || null, blocks })
     .where(eq(schema.pages.slug, slug));
+  await audit(admin, "page.saved", { type: "page", label: slug });
   revalidateSite();
   return { ok: t.pages.saved, blocks };
 }

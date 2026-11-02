@@ -5,39 +5,58 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "@animate-ui/react/primitives/radix-ui";
 import { Highlight, HighlightItem } from "@animate-ui/react/primitives/effects/highlight";
+import type { Permission } from "@/lib/permissions";
 import { useAdminI18n } from "./AdminI18n";
 import { Icon, type IconName } from "./icons";
 import { Tip } from "./motion";
 
-type NavKey = "dashboard" | "orders" | "requests" | "finance" | "products" | "workshops" | "categories" | "tags" | "pages" | "currencies" | "settings";
+type NavKey = "dashboard" | "orders" | "requests" | "finance" | "products" | "workshops" | "categories" | "tags" | "pages" | "currencies" | "settings" | "users" | "customers" | "account" | "forbidden" | "search" | "coupons" | "reviews" | "payments";
+type NavItem = { href: string; key: NavKey; icon: IconName; needs?: Permission };
 
-const GROUPS: { key: "overview" | "sales" | "catalogue" | "site"; items: { href: string; key: NavKey; icon: IconName }[] }[] = [
+const GROUPS: { key: "overview" | "sales" | "catalogue" | "people" | "site"; items: NavItem[] }[] = [
   { key: "overview", items: [{ href: "/admin", key: "dashboard", icon: "dashboard" }] },
   {
     key: "sales",
     items: [
-      { href: "/admin/orders", key: "orders", icon: "orders" },
-      { href: "/admin/requests", key: "requests", icon: "requests" },
-      { href: "/admin/finance", key: "finance", icon: "finance" },
+      { href: "/admin/orders", key: "orders", icon: "orders", needs: "orders.view" },
+      { href: "/admin/requests", key: "requests", icon: "requests", needs: "requests.view" },
+      { href: "/admin/finance", key: "finance", icon: "finance", needs: "finance.view" },
+      { href: "/admin/coupons", key: "coupons", icon: "ticket", needs: "coupons.view" },
     ],
   },
   {
     key: "catalogue",
     items: [
-      { href: "/admin/products", key: "products", icon: "products" },
-      { href: "/admin/workshops", key: "workshops", icon: "workshops" },
-      { href: "/admin/categories", key: "categories", icon: "categories" },
-      { href: "/admin/tags", key: "tags", icon: "tags" },
+      { href: "/admin/products", key: "products", icon: "products", needs: "products.view" },
+      { href: "/admin/workshops", key: "workshops", icon: "workshops", needs: "workshops.view" },
+      { href: "/admin/categories", key: "categories", icon: "categories", needs: "taxonomy.view" },
+      { href: "/admin/tags", key: "tags", icon: "tags", needs: "taxonomy.view" },
+      { href: "/admin/reviews", key: "reviews", icon: "star", needs: "reviews.view" },
+    ],
+  },
+  {
+    key: "people",
+    items: [
+      { href: "/admin/customers", key: "customers", icon: "users", needs: "customers.view" },
+      { href: "/admin/users", key: "users", icon: "shield", needs: "users.view" },
     ],
   },
   {
     key: "site",
     items: [
-      { href: "/admin/pages", key: "pages", icon: "pages" },
-      { href: "/admin/currencies", key: "currencies", icon: "currencies" },
-      { href: "/admin/settings", key: "settings", icon: "settings" },
+      { href: "/admin/pages", key: "pages", icon: "pages", needs: "pages.view" },
+      { href: "/admin/currencies", key: "currencies", icon: "currencies", needs: "currencies.view" },
+      { href: "/admin/payments", key: "payments", icon: "card", needs: "payments.view" },
+      { href: "/admin/settings", key: "settings", icon: "settings", needs: "settings.view" },
     ],
   },
+];
+
+/** Pages outside the menu, named in the top bar on small screens. */
+const OTHER: NavItem[] = [
+  { href: "/admin/account", key: "account", icon: "settings" },
+  { href: "/admin/forbidden", key: "forbidden", icon: "ban" },
+  { href: "/admin/search", key: "search", icon: "search" },
 ];
 
 const spring = { type: "spring", stiffness: 380, damping: 34 } as const;
@@ -61,13 +80,15 @@ function Brand({ name }: { name: string }) {
  * Grouped navigation; a soft brand pill slides to the current page (Animate UI Highlight).
  * The current item keeps dark text, so it stays readable while the pill is still moving or not drawn yet.
  */
-function Nav({ active, newRequests, onNavigate }: { active: string; newRequests: number; onNavigate?: () => void }) {
+function Nav({ active, newRequests, permissions, onNavigate }: { active: string; newRequests: number; permissions: Permission[]; onNavigate?: () => void }) {
   const { t } = useAdminI18n();
+  // the menu only hides what the server refuses anyway
+  const groups = GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.needs || permissions.includes(i.needs)) })).filter((g) => g.items.length);
   return (
     <nav aria-label={t.nav.panel}>
       <Highlight controlledItems value={active} transition={spring} className="inset-0 rounded-lg bg-brand-soft shadow-[inset_0_0_0_1px_rgba(164,110,98,0.18)]">
         <div className="space-y-5">
-          {GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group.key}>
               {group.key !== "overview" && (
                 <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase rtl:tracking-normal">{t.nav.groups[group.key]}</p>
@@ -107,6 +128,17 @@ function Nav({ active, newRequests, onNavigate }: { active: string; newRequests:
   );
 }
 
+/** Finds orders, customers, products and more; results follow the user's access. */
+function SearchBox() {
+  const { t } = useAdminI18n();
+  return (
+    <form action="/admin/search" role="search" className="relative">
+      <Icon name="search" size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+      <input type="search" name="q" required aria-label={t.search.label} placeholder={t.search.placeholder} className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 ps-9 pe-3 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-900/5" />
+    </form>
+  );
+}
+
 function SidebarFooter({ email, logout, setLanguage }: { email: string; logout: () => Promise<void>; setLanguage: (data: FormData) => Promise<void> }) {
   const { lang, t } = useAdminI18n();
   return (
@@ -126,7 +158,7 @@ function SidebarFooter({ email, logout, setLanguage }: { email: string; logout: 
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 text-xs font-semibold text-white uppercase" aria-hidden="true">
           {email.slice(0, 1)}
         </span>
-        <span className="min-w-0 flex-1 truncate text-xs text-zinc-600" dir="ltr">{email}</span>
+        <Link href="/admin/account" aria-label={t.nav.account} className="min-w-0 flex-1 truncate rounded text-xs text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline" dir="ltr">{email}</Link>
         <form action={logout}>
           <Tip label={t.nav.logout}>
             <button aria-label={t.nav.logout} className="grid size-8 place-items-center rounded-lg text-zinc-500 transition hover:bg-red-50 hover:text-red-600">
@@ -142,6 +174,7 @@ function SidebarFooter({ email, logout, setLanguage }: { email: string; logout: 
 export default function AdminShell({
   name,
   email,
+  permissions,
   newRequests,
   logout,
   setLanguage,
@@ -149,6 +182,7 @@ export default function AdminShell({
 }: {
   name: string;
   email: string;
+  permissions: Permission[];
   newRequests: number;
   logout: () => Promise<void>;
   setLanguage: (data: FormData) => Promise<void>;
@@ -158,7 +192,7 @@ export default function AdminShell({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
-  const all = GROUPS.flatMap((g) => g.items);
+  const all = [...GROUPS.flatMap((g) => g.items), ...OTHER];
   const current = all.filter((i) => (i.href === "/admin" ? pathname === "/admin" : pathname.startsWith(i.href))).at(-1) ?? all[0];
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the mobile menu closes after navigating
@@ -172,8 +206,8 @@ export default function AdminShell({
   return (
     <div className="min-h-screen lg:grid lg:h-dvh lg:min-h-0 lg:grid-cols-[272px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
       <aside className="hidden border-e border-zinc-200/80 bg-white lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden">
-        <div className="shrink-0 p-4 pb-2"><Brand name={name} /></div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} /></div>
+        <div className="shrink-0 space-y-3 p-4 pb-2"><Brand name={name} />{permissions.length > 0 && <SearchBox />}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} permissions={permissions} /></div>
         <div className="shrink-0 p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
       </aside>
 
@@ -203,7 +237,8 @@ export default function AdminShell({
                 <Icon name="close" />
               </Drawer.Close>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} onNavigate={() => setOpen(false)} /></div>
+            {permissions.length > 0 && <div className="px-4 pb-1"><SearchBox /></div>}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4"><Nav active={current.href} newRequests={newRequests} permissions={permissions} onNavigate={() => setOpen(false)} /></div>
             <div className="shrink-0 p-4 pt-0"><SidebarFooter email={email} logout={logout} setLanguage={setLanguage} /></div>
           </Drawer.Content>
         </Drawer.Portal>

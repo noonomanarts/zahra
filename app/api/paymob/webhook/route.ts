@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, ignored: true });
   }
 
-  const tx = verifyProcessedCallback(body.obj, hmac);
+  const tx = await verifyProcessedCallback(body.obj, hmac);
   if (!tx) return Response.json({ error: "invalid signature" }, { status: 401 });
 
   const order = await applyPaymobTransaction(tx);

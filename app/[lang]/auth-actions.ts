@@ -13,7 +13,7 @@ import { DEFAULT_LOCALE, isLocale, type Locale } from "@/lib/i18n/config";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
 export type AuthError = "invalidName" | "invalidEmail" | "invalidPassword" | "invalidCredentials"
-  | "passwordMismatch" | "registrationFailed" | "rateLimited" | "unavailable";
+  | "passwordMismatch" | "registrationFailed" | "rateLimited" | "unavailable" | "suspended" | "wrongPassword" | "resetInvalid" | "emailInUse";
 export type AuthState = { error?: AuthError; name?: string; email?: string };
 
 const dummyPasswordHash = hashPassword("customer-auth-dummy-verification");
@@ -44,6 +44,8 @@ export async function loginCustomer(lang: Locale, _prev: AuthState, formData: Fo
     const customer = await db.query.customers.findFirst({ where: eq(schema.customers.email, email) });
     const matches = await verifyPassword(password, customer?.passwordHash ?? await dummyPasswordHash);
     if (!customer || !matches) return { ...state, error: "invalidCredentials" };
+    // only someone who knows the password learns the account is suspended
+    if (customer.disabledAt) return { ...state, error: "suspended" };
     await createCustomerSession(customer.id);
   } catch {
     return { ...state, error: "unavailable" };

@@ -1,31 +1,45 @@
 import Link from "next/link";
-import { count, desc, eq, inArray, sum } from "drizzle-orm";
+import { count, desc, eq, inArray, lte, sum } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireAdmin } from "@/lib/auth";
 import { formatMoney } from "@/lib/currency";
 import { getCurrencySettings } from "@/lib/currency-server";
 import { getAdminT } from "@/lib/i18n/admin-server";
-import { paymobEnabled } from "@/lib/paymob";
+import { activeGateway, amwalTestMode } from "@/lib/payments";
+import { can, type Permission } from "@/lib/permissions";
 import { Badge, Card, Notice, PageTitle, Stat, btnCls, btnSecondaryCls } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/icons";
 import { Count } from "@/components/admin/motion";
 import { REQUEST_BADGE } from "./requests/badges";
 
+const LOW_STOCK = 3;
+
 export default async function DashboardPage() {
   const admin = await requireAdmin();
   const { lang, t } = await getAdminT();
   const d = t.dashboard;
+  const has = (permission: Permission) => can(admin.permissions, permission);
+  const seesOrders = has("orders.view");
+  const seesProducts = has("products.view");
+  const seesRequests = has("requests.view");
+  // each tile and list only loads for someone allowed to open its section
   const PAID = ["paid", "processing", "shipped", "completed"] as const;
-  const [[products], [orders], [awaiting], [revenue], [noArabic], recent, currency, [newRequests], requests] = await Promise.all([
-    db.select({ n: count() }).from(schema.products),
-    db.select({ n: count() }).from(schema.orders),
-    db.select({ n: count() }).from(schema.orders).where(eq(schema.orders.status, "paid")),
-    db.select({ total: sum(schema.orders.total) }).from(schema.orders).where(inArray(schema.orders.status, [...PAID])),
-    db.select({ n: count() }).from(schema.products).where(eq(schema.products.nameAr, "")),
-    db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt)).limit(6),
-    getCurrencySettings(),
-    db.select({ n: count() }).from(schema.serviceRequests).where(eq(schema.serviceRequests.status, "new")),
-    db.select().from(schema.serviceRequests).orderBy(desc(schema.serviceRequests.createdAt)).limit(5),
+  const [gateway, testMode, pendingReviews, lowStock] = await Promise.all([
+    activeGateway(),
+    amwalTestMode(),
+    has("reviews.view") ? db.select({ n: count() }).from(schema.productReviews).where(eq(schema.productReviews.status, "pending")).then(([r]) => r) : null,
+    has("products.manage") ? db.select({ n: count() }).from(schema.products).where(lte(schema.products.stock, LOW_STOCK)).then(([r]) => r) : null,
+  ]);
+  const [products, orders, awaiting, revenue, noArabic, recent, currency, newRequests, requests] = await Promise.all([
+    seesProducts ? db.select({ n: count() }).from(schema.products).then(([r]) => r) : null,
+    seesOrders ? db.select({ n: count() }).from(schema.orders).then(([r]) => r) : null,
+    seesOrders ? db.select({ n: count() }).from(schema.orders).where(eq(schema.orders.status, "paid")).then(([r]) => r) : null,
+    seesOrders ? db.select({ total: sum(schema.orders.total) }).from(schema.orders).where(inArray(schema.orders.status, [...PAID])).then(([r]) => r) : null,
+    has("products.manage") ? db.select({ n: count() }).from(schema.products).where(eq(schema.products.nameAr, "")).then(([r]) => r) : null,
+    seesOrders ? db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt)).limit(6) : [],
+    has("currencies.manage") ? getCurrencySettings() : null,
+    seesRequests ? db.select({ n: count() }).from(schema.serviceRequests).where(eq(schema.serviceRequests.status, "new")).then(([r]) => r) : null,
+    seesRequests ? db.select().from(schema.serviceRequests).orderBy(desc(schema.serviceRequests.createdAt)).limit(5) : [],
   ]);
   const dateFmt = new Intl.DateTimeFormat(lang === "ar" ? "ar-OM-u-nu-latn" : "en-GB", { dateStyle: "medium", timeZone: "Asia/Muscat" });
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Asia/Muscat" }).format(new Date()));
@@ -33,11 +47,11 @@ export default async function DashboardPage() {
   const currencyLabel = lang === "ar" ? " ر.ع." : "OMR ";
 
   const quick = [
-    { href: "/admin/products/new", label: d.quickProduct, icon: "plus" as const },
-    { href: "/admin/requests?status=new", label: d.quickRequests, icon: "requests" as const },
-    { href: "/admin/finance", label: d.quickFinance, icon: "finance" as const },
-    { href: "/admin/pages/home", label: d.quickHome, icon: "pages" as const },
-  ];
+    { href: "/admin/products/new", label: d.quickProduct, icon: "plus" as const, needs: "products.manage" as const },
+    { href: "/admin/requests?status=new", label: d.quickRequests, icon: "requests" as const, needs: "requests.view" as const },
+    { href: "/admin/finance", label: d.quickFinance, icon: "finance" as const, needs: "finance.view" as const },
+    { href: "/admin/pages/home", label: d.quickHome, icon: "pages" as const, needs: "pages.view" as const },
+  ].filter((q) => has(q.needs));
 
   return (
     <>
@@ -46,37 +60,42 @@ export default async function DashboardPage() {
         description={d.subtitle(admin.name || admin.email)}
         actions={
           <>
-            <Link href="/admin/orders" className={btnSecondaryCls}><Icon name="orders" size={16} /> {t.nav.orders}</Link>
-            <Link href="/admin/products/new" className={btnCls}><Icon name="plus" size={16} /> {t.products.add}</Link>
+            {seesOrders && <Link href="/admin/orders" className={btnSecondaryCls}><Icon name="orders" size={16} /> {t.nav.orders}</Link>}
+            {has("products.manage") && <Link href="/admin/products/new" className={btnCls}><Icon name="plus" size={16} /> {t.products.add}</Link>}
           </>
         }
       />
 
-      <div className="space-y-3">
-        {!paymobEnabled() && <Notice>{d.paymentOff}</Notice>}
-        {newRequests.n > 0 && (
+      <div className="space-y-3 empty:hidden">
+        {has("payments.view") && !gateway && <Notice action={<Link href="/admin/payments" className={btnSecondaryCls}>{t.nav.payments}</Link>}>{d.paymentOff}</Notice>}
+        {has("payments.view") && testMode && <Notice action={<Link href="/admin/payments" className={btnSecondaryCls}>{t.nav.payments}</Link>}>{t.payments.testModeWarning}</Notice>}
+        {pendingReviews && pendingReviews.n > 0 && <Notice tone="sky" action={<Link href="/admin/reviews" className={btnSecondaryCls}>{t.nav.reviews}</Link>}>{d.pendingReviews(pendingReviews.n)}</Notice>}
+        {lowStock && lowStock.n > 0 && <Notice action={<Link href="/admin/products?stock=low" className={btnSecondaryCls}>{t.nav.products}</Link>}>{d.lowStock(lowStock.n)}</Notice>}
+        {newRequests && newRequests.n > 0 && (
           <Notice tone="sky" action={<Link href="/admin/requests?status=new" className={btnSecondaryCls}>{d.openRequests}</Link>}>{d.newRequests(newRequests.n)}</Notice>
         )}
-        {currency.pending && <Notice action={<Link href="/admin/currencies" className={btnSecondaryCls}>{d.reviewRates}</Link>}>{d.ratesPending}</Notice>}
-        {noArabic.n > 0 && (
+        {currency?.pending && <Notice action={<Link href="/admin/currencies" className={btnSecondaryCls}>{d.reviewRates}</Link>}>{d.ratesPending}</Notice>}
+        {noArabic && noArabic.n > 0 && (
           <Notice action={<Link href="/admin/products?missing=ar" className={btnSecondaryCls}>{t.nav.products}</Link>}>{d.missingArabic(noArabic.n)}</Notice>
         )}
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat
-          label={d.revenue}
-          tone="emerald"
-          icon={<Icon name="wallet" />}
-          value={<Count value={Number(revenue.total ?? 0)} decimals={3} prefix={lang === "ar" ? undefined : currencyLabel} suffix={lang === "ar" ? currencyLabel : undefined} />}
-        />
-        <Stat label={d.orders} tone="sky" icon={<Icon name="orders" />} value={<Count value={orders.n} />} />
-        <Stat label={d.awaiting} tone="amber" icon={<Icon name="clock" />} value={<Count value={awaiting.n} />} hint={awaiting.n ? <Link href="/admin/orders?status=paid" className="underline-offset-2 hover:underline">{d.viewAll}</Link> : undefined} />
-        <Stat label={d.products} tone="rose" icon={<Icon name="box" />} value={<Count value={products.n} />} />
+      <div className="mt-6 grid gap-4 empty:hidden sm:grid-cols-2 xl:grid-cols-4">
+        {revenue && (
+          <Stat
+            label={d.revenue}
+            tone="emerald"
+            icon={<Icon name="wallet" />}
+            value={<Count value={Number(revenue.total ?? 0)} decimals={3} prefix={lang === "ar" ? undefined : currencyLabel} suffix={lang === "ar" ? currencyLabel : undefined} />}
+          />
+        )}
+        {orders && <Stat label={d.orders} tone="sky" icon={<Icon name="orders" />} value={<Count value={orders.n} />} />}
+        {awaiting && <Stat label={d.awaiting} tone="amber" icon={<Icon name="clock" />} value={<Count value={awaiting.n} />} hint={awaiting.n ? <Link href="/admin/orders?status=paid" className="underline-offset-2 hover:underline">{d.viewAll}</Link> : undefined} />}
+        {products && <Stat label={d.products} tone="rose" icon={<Icon name="box" />} value={<Count value={products.n} />} />}
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_380px]">
-        <Card title={d.recent} actions={<Link href="/admin/orders" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">{d.viewAll}</Link>} flush>
+      <div className={`mt-6 grid gap-6 ${seesOrders ? "xl:grid-cols-[1fr_380px]" : "xl:grid-cols-2"}`}>
+        {seesOrders && <Card title={d.recent} actions={<Link href="/admin/orders" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">{d.viewAll}</Link>} flush>
           {recent.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -95,10 +114,10 @@ export default async function DashboardPage() {
           ) : (
             <Empty icon="orders" text={d.noOrders} />
           )}
-        </Card>
+        </Card>}
 
         <div className="space-y-6">
-          <Card title={t.nav.requests} actions={<Link href="/admin/requests" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">{d.viewAll}</Link>} flush>
+          {seesRequests && <Card title={t.nav.requests} actions={<Link href="/admin/requests" className="text-sm font-medium text-zinc-500 hover:text-zinc-900">{d.viewAll}</Link>} flush>
             {requests.length ? (
               <ul className="divide-y divide-zinc-100">
                 {requests.map((r) => (
@@ -116,9 +135,9 @@ export default async function DashboardPage() {
             ) : (
               <Empty icon="requests" text={t.requests.none} />
             )}
-          </Card>
+          </Card>}
 
-          <Card title={d.quick}>
+          {quick.length > 0 && <Card title={d.quick}>
             <div className="grid grid-cols-2 gap-2">
               {quick.map((q) => (
                 <Link key={q.href} href={q.href} className="group flex flex-col gap-2 rounded-xl border border-zinc-200/80 p-3 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-sm motion-reduce:transform-none">
@@ -129,7 +148,7 @@ export default async function DashboardPage() {
                 </Link>
               ))}
             </div>
-          </Card>
+          </Card>}
         </div>
       </div>
     </>

@@ -65,6 +65,7 @@ export default function CustomerAuthForm({ mode, next, submitAction }: {
         </div>
         {registering && <p id="customer-password-hint" className="mt-2 text-xs text-muted">{a.passwordHint}</p>}
       </div>
+      {!registering && <p className="-mt-2 text-end text-sm"><Link href={href("/forgot-password")} className="text-muted underline underline-offset-4 hover:text-brand-dark">{a.forgotPassword}</Link></p>}
       {registering && (
         <div>
           <label htmlFor="customer-confirm-password" className="mb-2 block text-sm font-medium">{a.confirmPassword}</label>

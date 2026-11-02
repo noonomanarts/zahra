@@ -4,13 +4,14 @@ import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireAdmin } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { formatMoney } from "@/lib/currency";
 import { getAdminT } from "@/lib/i18n/admin-server";
 import { pick } from "@/lib/i18n/config";
 import { adminCatalogue } from "@/lib/data";
 import { skuSuggestions } from "@/lib/sku";
 import { workshopRoster } from "@/lib/workshops";
-import { Badge, Card, Notice, PageTitle, Stat, btnDangerCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
+import { Badge, Card, Notice, PageTitle, Stat, btnDangerCls, btnSecondaryCls, inputCls, ReadOnly } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/icons";
 import { ConfirmAction, Count, SlidingTabs } from "@/components/admin/motion";
 import ProductForm from "../../products/ProductForm";
@@ -22,7 +23,8 @@ import WorkshopContent from "./WorkshopContent";
 export const metadata: Metadata = { title: "Workshop" };
 
 export default async function WorkshopPage({ params, searchParams }: PageProps<"/admin/workshops/[id]">) {
-  await requireAdmin();
+  const admin = await requireAdmin("workshops.view");
+  const editable = can(admin.permissions, "workshops.manage");
   const { lang, t } = await getAdminT();
   const w = t.workshops;
   const id = Number((await params).id);
@@ -59,18 +61,22 @@ export default async function WorkshopPage({ params, searchParams }: PageProps<"
                 <Icon name="external" size={16} className="rtl:-scale-x-100" /> {w.viewOnSite}
               </a>
             )}
-            <form id="delete-workshop" action={deleteProduct}>
-              <input type="hidden" name="id" value={product.id} />
-            </form>
-            <ConfirmAction
-              form="delete-workshop"
-              className={btnDangerCls}
-              trigger={<><Icon name="trash" size={16} /> {t.common.delete}</>}
-              title={w.deleteTitle}
-              description={w.deleteText(name)}
-              confirm={w.deleteConfirm}
-              cancel={t.common.cancel}
-            />
+            {editable && (
+              <>
+                <form id="delete-workshop" action={deleteProduct}>
+                  <input type="hidden" name="id" value={product.id} />
+                </form>
+                <ConfirmAction
+                  form="delete-workshop"
+                  className={btnDangerCls}
+                  trigger={<><Icon name="trash" size={16} /> {t.common.delete}</>}
+                  title={w.deleteTitle}
+                  description={w.deleteText(name)}
+                  confirm={w.deleteConfirm}
+                  cancel={t.common.cancel}
+                />
+              </>
+            )}
           </>
         }
       />
@@ -110,16 +116,20 @@ export default async function WorkshopPage({ params, searchParams }: PageProps<"
       </div>
 
       {tab === "details" && catalogue ? (
-        <ProductForm
-          key={product.id}
-          product={catalogue[0].products.find((p) => p.id === product.id)}
-          categories={catalogue[0].categories}
-          tags={catalogue[0].tags}
-          skus={catalogue[1]}
-          kind="workshop"
-        />
+        <ReadOnly when={!editable} label={t.common.readOnly}>
+          <ProductForm
+            key={product.id}
+            product={catalogue[0].products.find((p) => p.id === product.id)}
+            categories={catalogue[0].categories}
+            tags={catalogue[0].tags}
+            skus={catalogue[1]}
+            kind="workshop"
+          />
+        </ReadOnly>
       ) : tab === "content" ? (
-        <WorkshopContent id={product.id} videos={product.workshopVideos} files={product.workshopFiles.map(({ id, name, size }) => ({ id, name, size }))} />
+        <ReadOnly when={!editable} label={t.common.readOnly}>
+          <WorkshopContent id={product.id} videos={product.workshopVideos} files={product.workshopFiles.map(({ id, name, size }) => ({ id, name, size }))} />
+        </ReadOnly>
       ) : (
         <div className="grid items-start gap-6 xl:grid-cols-[1fr_360px]">
           <Card
@@ -180,7 +190,7 @@ export default async function WorkshopPage({ params, searchParams }: PageProps<"
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap text-zinc-500">{dateFmt.format(s.since)}</td>
                         <td className="px-5 py-3 text-end">
-                          {s.manual && !s.orders.length && (
+                          {editable && s.manual && !s.orders.length && (
                             <>
                               <form id={`revoke-${s.customerId}`} action={revokeWorkshop}>
                                 <input type="hidden" name="productId" value={product.id} />
@@ -212,9 +222,11 @@ export default async function WorkshopPage({ params, searchParams }: PageProps<"
           </Card>
 
           <div className="space-y-6">
-            <Card title={w.grantTitle} description={w.grantDesc}>
-              <GrantForm productId={product.id} customers={customers.filter((c) => !withAccess.has(c.id))} />
-            </Card>
+            {editable && (
+              <Card title={w.grantTitle} description={w.grantDesc}>
+                <GrantForm productId={product.id} customers={customers.filter((c) => !withAccess.has(c.id))} />
+              </Card>
+            )}
 
             {roster.unlinked.length > 0 && (
               <Card title={`${w.unlinked} (${roster.unlinked.length})`} description={w.unlinkedDesc} flush>
@@ -228,7 +240,7 @@ export default async function WorkshopPage({ params, searchParams }: PageProps<"
                           {w.viaOrder(g.number)} · {dateFmt.format(g.date)}
                         </Link>
                       </span>
-                      {g.customerId ? (
+                      {!editable ? null : g.customerId ? (
                         <form action={linkGuestOrder} className="shrink-0">
                           <input type="hidden" name="productId" value={product.id} />
                           <input type="hidden" name="customerId" value={g.customerId} />

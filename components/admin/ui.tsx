@@ -212,6 +212,35 @@ export function FormMessage({ state }: { state?: { error?: string; ok?: string }
   return null;
 }
 
+/**
+ * Wraps editing controls for someone who may only look. The disabled fieldset turns off every field and button
+ * inside it; the server refuses the change either way, this only keeps the page honest about it.
+ */
+export function ReadOnly({ when, label, children }: { when: boolean; label: string; children: React.ReactNode }) {
+  if (!when) return <>{children}</>;
+  return (
+    <div className="space-y-4">
+      <Notice tone="sky">{label}</Notice>
+      <fieldset disabled className="m-0 min-w-0 border-0 p-0">{children}</fieldset>
+    </div>
+  );
+}
+
+/** Previous / next links for a list split into pages. */
+export function Pagination({ page, pages, total, perPage, href, labels }: { page: number; pages: number; total: number; perPage: number; href: (page: number) => string; labels: { label: string; previous: string; next: string; range: (from: number, to: number, total: number) => string } }) {
+  if (!total) return null;
+  const off = "pointer-events-none opacity-40";
+  return (
+    <nav aria-label={labels.label} className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-4 py-3">
+      <p className="text-xs text-zinc-500 tabular-nums"><bdi>{labels.range((page - 1) * perPage + 1, Math.min(page * perPage, total), total)}</bdi></p>
+      <div className="flex gap-2">
+        <Link href={href(page - 1)} aria-disabled={page <= 1} tabIndex={page <= 1 ? -1 : undefined} className={`${btnSecondaryCls} px-3 py-1.5 text-xs ${page <= 1 ? off : ""}`}>{labels.previous}</Link>
+        <Link href={href(page + 1)} aria-disabled={page >= pages} tabIndex={page >= pages ? -1 : undefined} className={`${btnSecondaryCls} px-3 py-1.5 text-xs ${page >= pages ? off : ""}`}>{labels.next}</Link>
+      </div>
+    </nav>
+  );
+}
+
 /** Bilingual values posted by <LField name="x" />. */
 export function readL(formData: FormData, name: string): L {
   return { en: String(formData.get(`${name}_en`) ?? "").trim(), ar: String(formData.get(`${name}_ar`) ?? "").trim() };
