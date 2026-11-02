@@ -46,7 +46,7 @@ function youtubeId(url: string) {
 
 type Ctx = { lang: Locale; products: Map<string, Product>; fresh: Product[]; email: string; whatsapp: string };
 
-function render(b: Group, key: number, { lang, products, fresh, email, whatsapp }: Ctx) {
+function render(b: Group, key: number, { lang, products, fresh, whatsapp }: Ctx) {
   const t = (text: L) => pick(text, lang);
   const href = (h: string) => localizeHref(lang, fixWhatsappLinks(h, whatsapp));
   // content imported from the old site may still contain WhatsApp short links that no longer work

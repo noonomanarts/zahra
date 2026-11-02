@@ -107,7 +107,8 @@ export function NotificationProvider({ initialUnread, enabled, children }: { ini
     if ("Notification" in window) setDesktop(Notification.permission);
     refresh();
     /* eslint-enable react-hooks/set-state-in-effect */
-    const timer = setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+    // keeps going in a background tab, where it matters most; browsers slow the timer down there by themselves
+    const timer = setInterval(refresh, POLL_MS);
     const onVisible = () => { if (!document.hidden) refresh(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
