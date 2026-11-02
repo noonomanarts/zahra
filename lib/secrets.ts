@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { PRIVATE_DIR } from "./uploads";
@@ -40,4 +40,13 @@ export function decryptSecret(stored: string | undefined | null) {
     console.error("could not decrypt a stored payment key", error);
     return null;
   }
+}
+
+/** A signature only this site can make, for values that travel in links. */
+export const signWithSiteKey = (text: string) => createHmac("sha256", encryptionKey()).update(text).digest("base64url");
+
+export function sameSignature(expected: string, received: string) {
+  const a = Buffer.from(expected);
+  const b = Buffer.from(received);
+  return a.length === b.length && timingSafeEqual(a, b);
 }

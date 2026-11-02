@@ -75,6 +75,7 @@ function localizeProduct(p: RawProduct, lang: Locale): Product {
     regularPrice: p.regularPrice,
     inStock: effectiveInStock(p),
     stock: p.stock,
+    fileCount: p.digitalFiles.length,
     digital: p.digital,
     published: p.published,
     images: p.images,

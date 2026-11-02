@@ -24,7 +24,7 @@ const PRECACHE_URLS = [
   "/fonts/autography.woff",
 ];
 const LIMITS = { [PAGES]: 40, [MEDIA]: 160 };
-const NEVER = /^\/(admin|api)(\/|$)|^\/(en|ar)\/(checkout|account|login|register|forgot-password|reset-password)(\/|$)/;
+const NEVER = /^\/(admin|api)(\/|$)|^\/(en|ar)\/(checkout|account|login|register|forgot-password|reset-password|downloads)(\/|$)/;
 
 // ---------- install: precache the shell + the CSS/JS the offline pages need ----------
 self.addEventListener("install", (event) => {

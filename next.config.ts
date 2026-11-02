@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
       {
+        // private download links
+        source: "/:lang(en|ar)/downloads/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
         // workshop pages and order history inside the account
         source: "/:lang(en|ar)/account/:path*",
         headers: [{ key: "Cache-Control", value: "private, no-store" }],

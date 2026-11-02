@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- admin previews, including local object URLs */
+import DigitalFiles, { type SavedFile } from "./DigitalFiles";
 import { useActionState, useState } from "react";
 import { useAdminI18n } from "@/components/admin/AdminI18n";
 import { Card, Field, FormMessage, LField, btnCls, inputCls } from "@/components/admin/ui";
@@ -23,6 +24,13 @@ export default function ProductForm({ product, categories, tags, notice, kind = 
   const [newFiles, setNewFiles] = useState<{ name: string; url: string }[]>([]);
   // SKU: the next number of the series (P digital, K kit/item, W workshop) until it is typed by hand
   const [digital, setDigital] = useState(product?.digital ?? false);
+  const [digitalFiles, setDigitalFiles] = useState<SavedFile[]>((product?.digitalFiles ?? []).map(({ id, name, size }) => ({ id, name, size })));
+  // after a save the server's list is the truth: renamed and newly uploaded files included
+  const [savedFiles, setSavedFiles] = useState(state.digitalFiles);
+  if (state.digitalFiles !== savedFiles) {
+    setSavedFiles(state.digitalFiles);
+    if (state.digitalFiles) setDigitalFiles(state.digitalFiles);
+  }
   const [skuAuto, setSkuAuto] = useState(!product?.sku);
   const [skuManual, setSkuManual] = useState(product?.sku ?? "");
   // once saved the SKU is fixed: show what was stored, not the number after it
@@ -157,6 +165,8 @@ export default function ProductForm({ product, categories, tags, notice, kind = 
       </div>
 
       <div className="space-y-6">
+        {kind === "product" && digital && <DigitalFiles files={digitalFiles} onChange={setDigitalFiles} />}
+
         <Card title={p.statusCard}>
           <div className="space-y-4">
             <ToggleField name="published" label={p.published} defaultChecked={product?.published ?? true} />

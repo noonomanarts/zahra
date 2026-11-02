@@ -32,6 +32,7 @@ The server needs a writable `storage/` folder (database, uploaded images, privat
 | `npm run test:access` | test administrator access through production HTTP forms with a disposable database; run `npm run build` first |
 | `npm run test:commerce` | coupons, stock, reviews, payment keys and gateway signatures through a production server; run `npm run build` first |
 | `npm run test:email` | SMTP settings, order and password emails against a local mail server; run `npm run build` first |
+| `npm run test:downloads` | digital file upload and who can download through a production server; run `npm run build` first |
 | `npm run test:pwa` | verify private-route and service-worker cache behavior |
 
 ## Admin panel (`/admin`)
@@ -88,6 +89,13 @@ block fills itself with the 6 newest in-stock products (Admin → Pages → Home
 The Customized Pattern showcase images are the gallery of the `customized-pattern` page in Admin → Pages.
 The free pattern PDFs are served from `public/downloads/free-patterns/`; a page button whose link ends in `.pdf`
 is shown as a download button.
+
+## Digital products
+
+A digital product can have PDF or ZIP files (Admin → Products, stored in private storage). After payment the buyer gets a private
+link: on the result page, by email, and under their orders when signed in. Links are signed, last 30 days after payment and stop
+working if the order is cancelled; an account has no time limit. A digital product without a file is delivered by hand: the
+dashboard warns about these products and each paid order raises a notification.
 
 ## Online workshops
 

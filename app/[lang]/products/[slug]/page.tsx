@@ -126,7 +126,7 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/product
             </div>
           ) : (
             <p className="mt-3 text-sm text-muted">
-              {product.digital ? t.product.digitalNote : !product.inStock ? t.product.outOfStock : product.stock !== null && product.stock <= 5 ? t.product.stockLeft(product.stock) : t.product.inStock}
+              {product.digital ? (product.fileCount > 0 ? t.product.digitalInstant : t.product.digitalNote) : !product.inStock ? t.product.outOfStock : product.stock !== null && product.stock <= 5 ? t.product.stockLeft(product.stock) : t.product.inStock}
             </p>
           )}
 

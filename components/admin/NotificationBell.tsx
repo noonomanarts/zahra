@@ -18,6 +18,7 @@ const Context = createContext<Feed | null>(null);
 const ICONS: Record<string, { icon: IconName; cls: string }> = {
   "order.paid": { icon: "wallet", cls: "bg-emerald-50 text-emerald-600" },
   "order.received": { icon: "orders", cls: "bg-sky-50 text-sky-600" },
+  "delivery.manual": { icon: "file", cls: "bg-amber-50 text-amber-600" },
   "payment.failed": { icon: "alert", cls: "bg-red-50 text-red-600" },
   "payment.mismatch": { icon: "alert", cls: "bg-red-50 text-red-600" },
   "request.new": { icon: "requests", cls: "bg-sky-50 text-sky-600" },

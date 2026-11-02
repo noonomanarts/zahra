@@ -16,7 +16,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
   const editable = can(admin.permissions, "products.manage");
   const { lang, t } = await getAdminT();
   const p = t.products;
-  const { q = "", category = "", missing = "", stock = "" } = (await searchParams) as { q?: string; category?: string; missing?: string; stock?: string };
+  const { q = "", category = "", missing = "", stock = "", files = "" } = (await searchParams) as { q?: string; category?: string; missing?: string; stock?: string; files?: string };
   const { products, categories } = await adminCatalogue();
   const term = q.toLowerCase();
   // workshops have their own section
@@ -26,7 +26,8 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
       (!term || x.name.toLowerCase().includes(term) || x.nameAr.includes(q) || x.sku?.toLowerCase().includes(term)) &&
       (!category || x.categories.includes(category)) &&
       (missing !== "ar" || !x.nameAr || !x.descriptionAr) &&
-      (stock !== "low" || (x.stock !== null && x.stock <= 3)),
+      (stock !== "low" || (x.stock !== null && x.stock <= 3)) &&
+      (files !== "none" || (x.digital && !x.digitalFiles.length)),
   );
   const catName = new Map(categories.map((c) => [c.slug, pick({ en: c.name, ar: c.nameAr }, lang)]));
 
@@ -74,6 +75,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap gap-1">
                     <Badge status={x.published ? "published" : "draft"} label={t.status[x.published ? "published" : "draft"]} />
+                    {x.digital && !x.digitalFiles.length && <Badge status="warning" label={p.noFileBadge} />}
                     {(!x.inStock || x.stock === 0) && <Badge status="outOfStock" label={t.status.outOfStock} />}
                     {x.stock !== null && x.stock > 0 && <span className={`text-xs whitespace-nowrap ${x.stock <= 3 ? "font-medium text-amber-700" : "text-zinc-500"}`}>{p.stockCount(x.stock)}</span>}
                     {(!x.nameAr || !x.descriptionAr) && <Badge status="warning" label={t.common.missingArabic} />}

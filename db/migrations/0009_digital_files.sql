@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `digital_files` text DEFAULT '[]' NOT NULL;

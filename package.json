@@ -21,7 +21,8 @@
     "test:access": "tsx --test tests/admin-access.test.mts",
     "test:commerce": "tsx --test tests/commerce.test.mts",
     "test:email": "tsx --test tests/email.test.mts",
-    "test:notifications": "tsx --test tests/notifications.test.mts"
+    "test:notifications": "tsx --test tests/notifications.test.mts",
+    "test:downloads": "tsx --test tests/downloads.test.mts"
   },
   "dependencies": {
     "@animate-ui/react": "^2.4.1",

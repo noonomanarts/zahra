@@ -43,6 +43,8 @@ export const products = sqliteTable(
     stock: integer("stock"),
     workshopVideos: text("workshop_videos", { mode: "json" }).$type<WorkshopVideo[]>().notNull().default([]),
     workshopFiles: text("workshop_files", { mode: "json" }).$type<WorkshopFile[]>().notNull().default([]),
+    /** what the buyer of a digital product downloads after paying (private storage) */
+    digitalFiles: text("digital_files", { mode: "json" }).$type<WorkshopFile[]>().notNull().default([]),
     ...timestamps,
   },
   (t) => [index("products_published_idx").on(t.published)],

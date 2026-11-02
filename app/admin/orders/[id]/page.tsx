@@ -11,6 +11,7 @@ import { getAdminT } from "@/lib/i18n/admin-server";
 import { LOCALE_NAMES, isLocale } from "@/lib/i18n/config";
 import { Badge, Card, PageTitle, btnCls, btnSecondaryCls, inputCls } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/icons";
+import { downloadUrl, isPaid, orderDeliverables } from "@/lib/downloads";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 import { customerWhatsapp, whatsappUrl } from "@/lib/whatsapp";
 import { updateOrderStatus } from "../actions";
@@ -36,6 +37,10 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
   // written in the language the customer ordered in
   const customerT = getAdminDictionary(order.locale === "ar" ? "ar" : "en");
   const whatsapp = whatsappUrl(customerWhatsapp(order.phone), customerT.orders.whatsappMessage(order.customerName, order.number, customerT.status[order.status]));
+
+  const delivery = await orderDeliverables(order.id);
+  const paid = isPaid(order);
+  const filesWhatsapp = paid && delivery.files.length ? whatsappUrl(customerWhatsapp(order.phone), `${customerT.orders.deliveryMessage(order.number)}\n${downloadUrl(order)}`) : null;
 
   const info = (label: string, value: React.ReactNode, ltr = false) =>
     value ? (
@@ -106,6 +111,21 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
               <Badge status={order.status} label={t.status[order.status]} />
             )}
           </Card>
+
+          {(delivery.files.length > 0 || delivery.manual.length > 0) && (
+            <Card title={o.delivery}>
+              {delivery.manual.length > 0 && <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-100">{o.deliveryManual(delivery.manual.join(", "))}</p>}
+              {delivery.files.length > 0 && (paid ? (
+                <>
+                  <p className="text-sm text-zinc-600">{o.deliveryReady(delivery.files.length)}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <a href={downloadUrl(order)} target="_blank" rel="noopener noreferrer" className={btnSecondaryCls}><Icon name="download" size={16} /> {o.deliveryOpen}</a>
+                    {filesWhatsapp && <a href={filesWhatsapp} target="_blank" rel="noopener noreferrer" className={btnSecondaryCls}><Icon name="requests" size={16} /> {o.deliverySend}</a>}
+                  </div>
+                </>
+              ) : <p className="text-sm text-zinc-500">{o.deliveryAfterPayment}</p>)}
+            </Card>
+          )}
 
           <Card title={o.payment}>
             <dl className="text-sm">

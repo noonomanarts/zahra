@@ -4,6 +4,7 @@ import { and, eq, gte, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { checkCoupon } from "./coupons";
 import { getSite } from "./data";
+import { downloadKey } from "./downloads";
 import { effectiveInStock } from "./format";
 import { releaseAbandonedOrders, syncStock } from "./stock";
 import { getCurrencySettings } from "./currency-server";
@@ -132,7 +133,9 @@ export async function placeOrder(input: CheckoutInput, { appUrl, lang, displayCu
   const gateway = total > 0 ? await activeGateway() : null;
   if (!gateway) {
     notifyOrder(order.id, total <= 0 ? "paid" : "received");
-    return { orderNumber: order.number, redirectTo: `/${lang}/checkout/result?ref=${order.number}` };
+    // a free order has no gateway to vouch for it, so its result page gets the download key
+    const key = total <= 0 ? `&key=${downloadKey(order.id)}` : "";
+    return { orderNumber: order.number, redirectTo: `/${lang}/checkout/result?ref=${order.number}${key}` };
   }
 
   if (gateway === "amwalpay") {

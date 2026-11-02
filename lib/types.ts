@@ -43,6 +43,8 @@ export type Product = {
   regularPrice: number | null;
   inStock: boolean;
   stock: number | null;
+  /** how many files a buyer can download; the files themselves are only sent to buyers */
+  fileCount: number;
   digital: boolean;
   published: boolean;
   images: string[];

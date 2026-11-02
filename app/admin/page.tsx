@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { count, desc, eq, inArray, lte, sum } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte, sum } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireAdmin } from "@/lib/auth";
 import { formatMoney } from "@/lib/currency";
@@ -24,11 +24,12 @@ export default async function DashboardPage() {
   const seesRequests = has("requests.view");
   // each tile and list only loads for someone allowed to open its section
   const PAID = ["paid", "processing", "shipped", "completed"] as const;
-  const [gateway, testMode, pendingReviews, lowStock] = await Promise.all([
+  const [gateway, testMode, pendingReviews, lowStock, noFiles] = await Promise.all([
     activeGateway(),
     amwalTestMode(),
     has("reviews.view") ? db.select({ n: count() }).from(schema.productReviews).where(eq(schema.productReviews.status, "pending")).then(([r]) => r) : null,
     has("products.manage") ? db.select({ n: count() }).from(schema.products).where(lte(schema.products.stock, LOW_STOCK)).then(([r]) => r) : null,
+    has("products.manage") ? db.select({ n: count() }).from(schema.products).where(and(eq(schema.products.digital, true), eq(schema.products.published, true), eq(schema.products.kind, "product"), eq(schema.products.digitalFiles, []))).then(([r]) => r) : null,
   ]);
   const [products, orders, awaiting, revenue, noArabic, recent, currency, newRequests, requests] = await Promise.all([
     seesProducts ? db.select({ n: count() }).from(schema.products).then(([r]) => r) : null,
@@ -70,6 +71,7 @@ export default async function DashboardPage() {
         {has("payments.view") && !gateway && <Notice action={<Link href="/admin/payments" className={btnSecondaryCls}>{t.nav.payments}</Link>}>{d.paymentOff}</Notice>}
         {has("payments.view") && testMode && <Notice action={<Link href="/admin/payments" className={btnSecondaryCls}>{t.nav.payments}</Link>}>{t.payments.testModeWarning}</Notice>}
         {pendingReviews && pendingReviews.n > 0 && <Notice tone="sky" action={<Link href="/admin/reviews" className={btnSecondaryCls}>{t.nav.reviews}</Link>}>{d.pendingReviews(pendingReviews.n)}</Notice>}
+        {noFiles && noFiles.n > 0 && <Notice action={<Link href="/admin/products?files=none" className={btnSecondaryCls}>{t.nav.products}</Link>}>{d.noFiles(noFiles.n)}</Notice>}
         {lowStock && lowStock.n > 0 && <Notice action={<Link href="/admin/products?stock=low" className={btnSecondaryCls}>{t.nav.products}</Link>}>{d.lowStock(lowStock.n)}</Notice>}
         {newRequests && newRequests.n > 0 && (
           <Notice tone="sky" action={<Link href="/admin/requests?status=new" className={btnSecondaryCls}>{d.openRequests}</Link>}>{d.newRequests(newRequests.n)}</Notice>

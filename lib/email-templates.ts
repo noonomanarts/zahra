@@ -68,6 +68,8 @@ const T = {
       cancelled: ["Your order was cancelled", "Your order has been cancelled. If this is unexpected, please reply to this email."],
     } as Record<OrderNotice, [string, string]>,
     digital: "Your digital patterns will be sent to this email address.",
+    filesReady: "Your files are ready to download. Keep this email: the link works for 30 days.",
+    filesButton: "Download your files",
     workshop: "Your workshop is ready in your account.",
     request: (n: string) => `We received your request ${n}`,
     requestText: "Thank you! We will review your request and get back to you soon.",
@@ -96,6 +98,8 @@ const T = {
       cancelled: ["تم إلغاء طلبك", "تم إلغاء طلبك. إذا لم تكن تتوقع ذلك، يرجى الرد على هذه الرسالة."],
     } as Record<OrderNotice, [string, string]>,
     digital: "سنرسل باتروناتك الرقمية إلى هذا البريد الإلكتروني.",
+    filesReady: "ملفاتك جاهزة للتنزيل. احتفظ بهذه الرسالة: يعمل الرابط لمدة 30 يومًا.",
+    filesButton: "تنزيل ملفاتك",
     workshop: "ورشتك جاهزة في حسابك.",
     request: (n: string) => `استلمنا طلبك ${n}`,
     requestText: "شكرًا لك! سنراجع طلبك ونرد عليك قريبًا.",
@@ -120,6 +124,10 @@ export type OrderForEmail = {
   total: number;
   items: { name: string; quantity: number; unitPrice: number; digital: boolean }[];
   hasWorkshop: boolean;
+  /** set when this order has files to download */
+  downloadUrl?: string | null;
+  /** digital items with no file yet, which the studio sends by hand */
+  manualDelivery?: boolean;
   accountUrl: string | null;
 };
 
@@ -135,7 +143,8 @@ export function orderEmail(notice: OrderNotice, o: OrderForEmail, lang: EmailLan
     paragraphs: [
       t.hello(o.customerName),
       text,
-      ...(paid && o.items.some((i) => i.digital) && !o.hasWorkshop ? [t.digital] : []),
+      ...(paid && o.downloadUrl ? [t.filesReady] : []),
+      ...(paid && o.manualDelivery ? [t.digital] : []),
       ...(paid && o.hasWorkshop ? [t.workshop] : []),
     ],
     rows: [
@@ -145,7 +154,7 @@ export function orderEmail(notice: OrderNotice, o: OrderForEmail, lang: EmailLan
       ...(o.shipping > 0 ? [{ label: t.shipping, value: omr(o.shipping, lang) }] : []),
       { label: t.total, value: omr(o.total, lang), strong: true },
     ],
-    button: o.accountUrl ? { label: t.viewAccount, url: o.accountUrl } : undefined,
+    button: paid && o.downloadUrl ? { label: t.filesButton, url: o.downloadUrl } : o.accountUrl ? { label: t.viewAccount, url: o.accountUrl } : undefined,
     footer: t.order(o.number),
   });
 }

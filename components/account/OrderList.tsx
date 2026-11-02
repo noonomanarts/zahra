@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Money from "@/components/Money";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
@@ -23,7 +24,7 @@ export function StatusPill({ lang, status }: { lang: Locale; status: string }) {
 export const accountDate = (lang: Locale, date: Date) =>
   new Intl.DateTimeFormat(lang === "ar" ? "ar-OM-u-nu-latn" : "en-GB", { dateStyle: "medium", timeZone: "Asia/Muscat" }).format(date);
 
-type Order = { id: number; number: string; status: string; total: number; createdAt: Date; items: { id: number; name: string; quantity: number }[] };
+type Order = { id: number; number: string; status: string; total: number; createdAt: Date; hasDownloads?: boolean; items: { id: number; name: string; quantity: number }[] };
 
 export function OrderList({ lang, orders }: { lang: Locale; orders: Order[] }) {
   const a = getDictionary(lang).account;
@@ -36,6 +37,7 @@ export function OrderList({ lang, orders }: { lang: Locale; orders: Order[] }) {
             <p className="mt-0.5 truncate text-sm text-muted">
               {accountDate(lang, o.createdAt)} · {o.items.map((i) => (i.quantity > 1 ? `${i.name} × ${i.quantity}` : i.name)).join(lang === "ar" ? "، " : ", ")}
             </p>
+            {o.hasDownloads && <Link href={`/${lang}/downloads/${o.id}`} className="mt-1 inline-block text-sm font-medium text-brand-dark underline underline-offset-4">{getDictionary(lang).downloads.title}</Link>}
           </div>
           <StatusPill lang={lang} status={o.status} />
           <p className="font-semibold sm:text-end">

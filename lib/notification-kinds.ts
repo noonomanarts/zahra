@@ -4,6 +4,7 @@ import type { Permission } from "./permissions";
 export const NOTIFICATION_KINDS = {
   "order.paid": "orders.view",
   "order.received": "orders.view",
+  "delivery.manual": "orders.view",
   "payment.failed": "orders.view",
   "payment.mismatch": "orders.view",
   "request.new": "requests.view",
@@ -18,7 +19,7 @@ export const NOTIFICATION_KINDS = {
 export type NotificationKind = keyof typeof NOTIFICATION_KINDS;
 
 export const NOTIFICATION_GROUPS = {
-  orders: ["order.paid", "order.received", "payment.failed", "payment.mismatch"],
+  orders: ["order.paid", "order.received", "delivery.manual", "payment.failed", "payment.mismatch"],
   requests: ["request.new", "contact.message"],
   catalogue: ["review.new", "stock.low", "stock.out"],
   people: ["customer.new"],

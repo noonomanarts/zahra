@@ -3,6 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { notifyAdmins } from "./admin-notifications";
 import { getSite } from "./data";
+import { downloadUrl, orderDeliverables } from "./downloads";
 import { emailConfigured, inBackground, loadEmailSettings, sendEmail } from "./email";
 import { adminAlert, orderEmail, passwordChangedEmail, requestEmail, resetEmail, type EmailLang, type OrderNotice } from "./email-templates";
 import { absoluteUrl } from "./seo";
@@ -27,6 +28,9 @@ export function notifyOrder(orderId: number, notice: OrderNotice, source: "custo
     if (source === "customer" && (notice === "paid" || notice === "received")) {
       await notifyAdmins(notice === "paid" ? "order.paid" : "order.received", { number: order.number, name: order.customerName, total: order.total.toFixed(3) }, `/admin/orders/${order.id}`);
     }
+    const deliverables = notice === "paid" ? await orderDeliverables(order.id) : { files: [], manual: [] };
+    // someone has to send these by hand, or the customer waits forever
+    if (deliverables.manual.length) await notifyAdmins("delivery.manual", { number: order.number, items: deliverables.manual.join(", ") }, `/admin/orders/${order.id}`);
     const s = await loadEmailSettings();
     if (!emailConfigured(s) || !s.enabled) return;
     const lang = langOf(order.locale);
@@ -44,6 +48,8 @@ export function notifyOrder(orderId: number, notice: OrderNotice, source: "custo
         total: order.total,
         items,
         hasWorkshop: workshops.length > 0,
+        downloadUrl: deliverables.files.length ? downloadUrl(order) : null,
+        manualDelivery: deliverables.manual.length > 0,
         accountUrl: order.customerId ? absoluteUrl(`/${lang}/account`) : null,
       }, lang, site.name), { kind: `order.${notice}` });
     }
