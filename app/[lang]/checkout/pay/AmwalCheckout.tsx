@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { useState } from "react";
 import { useI18n } from "@/components/providers/I18nProvider";
@@ -12,6 +13,7 @@ type Completed = { data?: { responseCode?: unknown; data?: Record<string, unknow
 export default function AmwalCheckout({ script, payload, resultUrl }: { script: string; payload: Record<string, unknown>; resultUrl: string }) {
   const { t, href } = useI18n();
   const c = t.checkout;
+  const router = useRouter();
   const [state, setState] = useState<"loading" | "open" | "error" | "cancelled">("loading");
 
   const open = () => {
@@ -25,7 +27,7 @@ export default function AmwalCheckout({ script, payload, resultUrl }: { script: 
         // missing values travel as the text "null": they are signed that way
         for (const key of ["amount", "currencyId", "customerId", "customerTokenId", "merchantReference", "transactionId", "transactionTime", "secureHashValue"]) params.set(key, String(d[key]));
         params.set("responseCode", String(result.data?.responseCode));
-        window.location.assign(`${resultUrl}?${params}`);
+        router.replace(`${resultUrl}?${params}`);
       },
       errorCallback: () => setState("error"),
       cancelCallback: () => setState("cancelled"),

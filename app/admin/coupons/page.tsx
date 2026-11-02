@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, count, desc, eq, isNotNull, sum } from "drizzle-orm";
+import { and, count, desc, isNotNull, sum } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireAdmin } from "@/lib/auth";
 import { countsAsUse } from "@/lib/coupons";
